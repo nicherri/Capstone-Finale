@@ -43,6 +43,24 @@ public class CategoryService : ICategoryService
             Description = categoryDto.Description
         };
 
+        // Creare e aggiungere immagini se presenti nel DTO
+        if (categoryDto.Images != null && categoryDto.Images.Count > 0)
+        {
+            foreach (var imageDto in categoryDto.Images)
+            {
+                var image = new Image
+                {
+                    CoverImageUrl = imageDto.CoverImageUrl,
+                    Image1Url = imageDto.Image1Url,
+                    Image2Url = imageDto.Image2Url,
+                    Image3Url = imageDto.Image3Url,
+                    AltText = imageDto.AltText,
+                    Category = category // Associazione alla categoria
+                };
+                category.Images.Add(image);
+            }
+        }
+
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 
@@ -50,20 +68,43 @@ public class CategoryService : ICategoryService
         return categoryDto;
     }
 
+
     public async Task<CategoryDTO> UpdateCategoryAsync(int id, CategoryDTO categoryDto)
     {
-        var category = await _context.Categories.FindAsync(id);
+        var category = await _context.Categories
+                                     .Include(c => c.Images) // Includiamo le immagini esistenti
+                                     .FirstOrDefaultAsync(c => c.Id == id);
         if (category == null) return null;
 
         category.Name = categoryDto.Name;
         category.Description = categoryDto.Description;
 
+        // Aggiorna le immagini
+        category.Images.Clear();
+        category.Images.AddRange(categoryDto.Images.Select(i => new Image
+        {
+            CoverImageUrl = i.CoverImageUrl,
+            Image1Url = i.Image1Url,
+            Image2Url = i.Image2Url,
+            Image3Url = i.Image3Url,
+            AltText = i.AltText
+        }));
+
         await _context.SaveChangesAsync();
         return categoryDto;
     }
 
+
     public async Task<bool> DeleteCategoryAsync(int id)
     {
+        // Controlla se ci sono prodotti associati alla categoria
+        var hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
+        if (hasProducts)
+        {
+            // Se ci sono prodotti associati, ritorna false o lancia un'eccezione a seconda delle tue esigenze
+            return false;
+        }
+
         var category = await _context.Categories.FindAsync(id);
         if (category == null) return false;
 
@@ -71,6 +112,7 @@ public class CategoryService : ICategoryService
         await _context.SaveChangesAsync();
         return true;
     }
+
 
     public async Task<IEnumerable<ProductDTO>> GetProductsByCategoryAsync(int categoryId)
     {

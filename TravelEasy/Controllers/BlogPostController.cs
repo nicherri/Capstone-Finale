@@ -33,11 +33,25 @@ namespace TravelEasy.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<BlogPostDTO>> CreateBlogPost(BlogPostDTO blogPostDto)
+        public async Task<ActionResult<BlogPostDTO>> CreateBlogPost([FromForm] BlogPostDTO blogPostDto)
         {
-            var createdBlogPost = await _blogPostService.CreateBlogPostAsync(blogPostDto);
-            return CreatedAtAction(nameof(GetBlogPostById), new { id = createdBlogPost.Id }, createdBlogPost);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var createdBlogPost = await _blogPostService.CreateBlogPostAsync(blogPostDto);
+                return CreatedAtAction(nameof(GetBlogPostById), new { id = createdBlogPost.Id }, createdBlogPost);
+            }
+            catch (Exception ex)
+            {
+                // Restituisci un messaggio di errore dettagliato
+                return StatusCode(500, new { error = ex.Message, details = ex.InnerException?.Message });
+            }
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBlogPost(int id, BlogPostDTO blogPostDto)

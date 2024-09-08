@@ -63,12 +63,31 @@ public class ShelvingService : IShelvingService
             AreaId = shelvingDto.AreaId
         };
 
+        // Creazione automatica di 4 shelf
+        for (int i = 0; i < 4; i++)
+        {
+            var shelf = new Shelf
+            {
+                Name = $"Shelf {i + 1} for {shelving.Name}",
+                Shelving = shelving
+            };
+            shelving.Shelves.Add(shelf);
+        }
+
         _context.Shelvings.Add(shelving);
         await _context.SaveChangesAsync();
 
         shelvingDto.Id = shelving.Id;
+        shelvingDto.Shelves = shelving.Shelves.Select(s => new ShelfDTO
+        {
+            Id = s.Id,
+            Name = s.Name,
+            ShelvingId = s.ShelvingId
+        }).ToList();
+
         return shelvingDto;
     }
+
 
     public async Task<ShelvingDTO> UpdateShelvingAsync(int id, ShelvingDTO shelvingDto)
     {
@@ -87,16 +106,31 @@ public class ShelvingService : IShelvingService
 
     public async Task<bool> DeleteShelvingAsync(int id)
     {
-        var shelving = await _context.Shelvings.FindAsync(id);
+        var shelving = await _context.Shelvings
+            .Include(s => s.Products)
+            .Include(s => s.Shelves)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
         if (shelving == null)
         {
             return false;
         }
 
+        // Controlla se ci sono prodotti associati
+        if (shelving.Products.Any())
+        {
+            // Non è possibile eliminare perché ci sono prodotti associati
+            return false;
+        }
+
+        // Rimuovi tutte le shelf associate
+        _context.Shelves.RemoveRange(shelving.Shelves);
+
         _context.Shelvings.Remove(shelving);
         await _context.SaveChangesAsync();
         return true;
     }
+
 
     public async Task<IEnumerable<ProductDTO>> GetProductsByShelvingAsync(int shelvingId)
     {

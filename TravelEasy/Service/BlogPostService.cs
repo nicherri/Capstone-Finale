@@ -20,7 +20,7 @@ public class BlogPostService : IBlogPostService
                 Id = blogPost.Id,
                 Title = blogPost.Title,
                 Content = blogPost.Content,
-                AuthorName = $"{blogPost.Author.Nome} {blogPost.Author.Cognome}",
+                AuthorId = blogPost.AuthorId,
                 CreatedAt = blogPost.CreatedAt
             }).ToListAsync();
     }
@@ -38,10 +38,11 @@ public class BlogPostService : IBlogPostService
             Id = blogPost.Id,
             Title = blogPost.Title,
             Content = blogPost.Content,
-            AuthorName = $"{blogPost.Author.Nome} {blogPost.Author.Cognome}",
+            AuthorId = blogPost.AuthorId,  // Usa solo AuthorId invece di AuthorName
             CreatedAt = blogPost.CreatedAt
         };
     }
+
 
     public async Task<BlogPostDTO> CreateBlogPostAsync(BlogPostDTO blogPostDto)
     {
@@ -56,9 +57,52 @@ public class BlogPostService : IBlogPostService
         _context.BlogPosts.Add(blogPost);
         await _context.SaveChangesAsync();
 
+        // Salvataggio delle immagini
+        if (blogPostDto.Images != null && blogPostDto.Images.Count > 0)
+        {
+            foreach (var image in blogPostDto.Images)
+            {
+                var imagePath = Path.Combine("Uploads/Images", $"{Guid.NewGuid()}_{image.FileName}");
+                using (var stream = new FileStream(imagePath, FileMode.Create))
+                {
+                    await image.CopyToAsync(stream);
+                }
+
+                var img = new Image
+                {
+                    CoverImageUrl = imagePath,
+                    BlogPostId = blogPost.Id
+                };
+                _context.Images.Add(img);
+            }
+        }
+
+        // Salvataggio dei video
+        if (blogPostDto.Videos != null && blogPostDto.Videos.Count > 0)
+        {
+            foreach (var video in blogPostDto.Videos)
+            {
+                var videoPath = Path.Combine("Uploads/Videos", $"{Guid.NewGuid()}_{video.FileName}");
+                using (var stream = new FileStream(videoPath, FileMode.Create))
+                {
+                    await video.CopyToAsync(stream);
+                }
+
+                var vid = new Video
+                {
+                    VideoUrl = videoPath,
+                    BlogPostId = blogPost.Id
+                };
+                _context.Videos.Add(vid);
+            }
+        }
+
+        await _context.SaveChangesAsync();
         blogPostDto.Id = blogPost.Id;
+
         return blogPostDto;
     }
+
 
     public async Task<BlogPostDTO> UpdateBlogPostAsync(int id, BlogPostDTO blogPostDto)
     {

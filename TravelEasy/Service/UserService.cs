@@ -1,5 +1,6 @@
-﻿// Service/UserService.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using TravelEasy.Data;
 using TravelEasy.Models;
 using TravelEasy.Models.DTO;
@@ -17,7 +18,7 @@ public class UserService : IUserService
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-        // Qui dovresti aggiungere la logica di verifica della password, per esempio usando un hash.
+        // Verifica della password usando hashing sicuro
         if (user == null || !VerifyPassword(password, user.PasswordHash))
         {
             return null;
@@ -35,8 +36,17 @@ public class UserService : IUserService
 
     private bool VerifyPassword(string password, string storedHash)
     {
-        // Implementa la verifica dell'hash della password
-        return password == storedHash; // Questa è una semplificazione, in realtà dovresti usare un hash sicuro
+        // Verifica hash della password
+        using (var sha256 = SHA256.Create())
+        {
+            var hashedInputBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            var hashedInputStringBuilder = new StringBuilder(64);
+
+            foreach (var b in hashedInputBytes)
+                hashedInputStringBuilder.Append(b.ToString("X2"));
+
+            return hashedInputStringBuilder.ToString() == storedHash;
+        }
     }
 
     public async Task<IEnumerable<UserDTO>> GetAllUsersAsync()
@@ -68,12 +78,15 @@ public class UserService : IUserService
 
     public async Task<UserDTO> CreateUserAsync(UserDTO userDto)
     {
+        // Hash della password
+        string hashedPassword = HashPassword(userDto.Password);
+
         var user = new User
         {
             Nome = userDto.Nome,
             Cognome = userDto.Cognome,
             Email = userDto.Email,
-            PasswordHash = userDto.Password,
+            PasswordHash = hashedPassword,
             Role = userDto.Role
         };
 
@@ -82,6 +95,15 @@ public class UserService : IUserService
 
         userDto.Id = user.Id;
         return userDto;
+    }
+
+    private string HashPassword(string password)
+    {
+        using (var sha256 = SHA256.Create())
+        {
+            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return BitConverter.ToString(hashedBytes).Replace("-", "").ToUpper();
+        }
     }
 
     public async Task<UserDTO> UpdateUserAsync(int id, UserDTO userDto)

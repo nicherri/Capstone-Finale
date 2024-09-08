@@ -82,34 +82,54 @@ public class ProductService : IProductService
 
     public async Task<ProductDTO> CreateProductAsync(ProductDTO productDto)
     {
-        var product = new Product
+        try
         {
-            Title = productDto.Title,
-            Subtitle = productDto.Subtitle,
-            Description = productDto.Description,
-            Price = productDto.Price,
-            NumberOfPieces = productDto.NumberOfPieces,
-            CategoryId = productDto.CategoryId,
-            AreaId = productDto.AreaId,
-            ShelvingId = productDto.ShelvingId,
-            ShelfId = productDto.ShelfId,
-            AverageRating = productDto.AverageRating,
+            var product = new Product
+            {
+                Title = productDto.Title,
+                Subtitle = productDto.Subtitle,
+                Description = productDto.Description,
+                Price = productDto.Price,
+                NumberOfPieces = productDto.NumberOfPieces,
+                CategoryId = productDto.CategoryId,
+                AreaId = productDto.AreaId,
+                ShelvingId = productDto.ShelvingId,
+                ShelfId = productDto.ShelfId,
+                AverageRating = productDto.AverageRating,
+                Images = productDto.Images?.Select(i => new Image
+                {
+                    CoverImageUrl = i.CoverImageUrl,
+                    Image1Url = i.Image1Url ?? string.Empty,
+                    Image2Url = i.Image2Url ?? string.Empty,
+                    Image3Url = i.Image3Url ?? string.Empty,
+                    AltText = i.AltText ?? string.Empty
+                }).ToList() ?? new List<Image>()
+            };
 
-            Images = productDto.Images?.Select(i => new Image { CoverImageUrl = i.CoverImageUrl }).ToList() ?? new List<Image>()
-        };
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
 
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
-
-        productDto.Id = product.Id; // Aggiorna l'ID nel DTO
-        return productDto;
+            productDto.Id = product.Id; // Aggiorna l'ID nel DTO
+            return productDto;
+        }
+        catch (Exception ex)
+        {
+            // Log error (ex)
+            throw;
+        }
     }
+
+
 
     public async Task<ProductDTO> UpdateProductAsync(int id, ProductDTO productDto)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products
+            .Include(p => p.Images)  // Include per caricare le immagini esistenti
+            .FirstOrDefaultAsync(p => p.Id == id);
+
         if (product == null) return null;
 
+        // Aggiornare le proprietà del prodotto
         product.Title = productDto.Title;
         product.Subtitle = productDto.Subtitle;
         product.Description = productDto.Description;
@@ -121,19 +141,49 @@ public class ProductService : IProductService
         product.ShelfId = productDto.ShelfId;
         product.AverageRating = productDto.AverageRating;
 
+        // Aggiornare le immagini
+        if (productDto.Images != null && productDto.Images.Any())
+        {
+            // Rimuovere le immagini esistenti
+            _context.Images.RemoveRange(product.Images);
+
+            // Aggiungere le nuove immagini
+            product.Images = productDto.Images.Select(i => new Image
+            {
+                CoverImageUrl = i.CoverImageUrl,
+                Image1Url = i.Image1Url,
+                Image2Url = i.Image2Url,
+                Image3Url = i.Image3Url,
+                AltText = i.AltText
+            }).ToList();
+        }
+
         await _context.SaveChangesAsync();
         return productDto;
     }
 
+
     public async Task<bool> DeleteProductAsync(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-        if (product == null) return false;
+        var product = await _context.Products
+            .Include(p => p.Images)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product == null)
+            return false;
+
+
+        _context.Images.RemoveRange(product.Images);
+
 
         _context.Products.Remove(product);
+
+
         await _context.SaveChangesAsync();
+
         return true;
     }
+
 
     public async Task<IEnumerable<ProductDTO>> GetProductsByCategoryAsync(int categoryId)
     {

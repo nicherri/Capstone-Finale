@@ -1,9 +1,14 @@
+using Microsoft.AspNetCore.Http.Features;  // Aggiungi questa importazione per FormOptions
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using TravelEasy.Data;
 using TravelEasy.Interface;
 using TravelEasy.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // Configura il servizio per il DbContext
 builder.Services.AddDbContext<TravelEasyContext>(options =>
@@ -24,6 +29,18 @@ builder.Services.AddScoped<IShelfService, ShelfService>();
 builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IWishlistItemService, WishlistItemService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+
+// Configura i controller con opzioni JSON
+builder.Services.AddControllersWithViews().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
+// Imposta il limite di upload a 100 MB per i file multimediali
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 104857600; // 100MB
+});
 
 // Aggiungi altri servizi necessari
 builder.Services.AddControllersWithViews();
@@ -47,6 +64,5 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
 
 app.Run();

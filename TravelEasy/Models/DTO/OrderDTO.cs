@@ -7,7 +7,7 @@
         public string Status { get; set; }
         public string ShippingAddress { get; set; }
         public int UserId { get; set; }
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
         public List<OrderItemDTO> OrderItems { get; set; }
     }
 

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TravelEasy.Data;
 
@@ -11,9 +12,11 @@ using TravelEasy.Data;
 namespace TravelEasy.Migrations
 {
     [DbContext(typeof(TravelEasyContext))]
-    partial class TravelEasyContextModelSnapshot : ModelSnapshot
+    [Migration("20240902132528_Updateimage")]
+    partial class Updateimage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -194,12 +197,15 @@ namespace TravelEasy.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image1Url")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image2Url")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image3Url")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ProductId")
@@ -609,8 +615,7 @@ namespace TravelEasy.Migrations
 
                     b.HasOne("Review", "Review")
                         .WithMany("ReviewImages")
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ReviewId");
 
                     b.Navigation("BlogPost");
 
@@ -777,8 +782,7 @@ namespace TravelEasy.Migrations
 
                     b.HasOne("Review", "Review")
                         .WithMany("ReviewVideos")
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ReviewId");
 
                     b.Navigation("BlogPost");
 

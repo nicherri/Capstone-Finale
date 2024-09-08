@@ -34,8 +34,13 @@ namespace TravelEasy.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<UserDTO>> CreateUser(UserDTO userDto)
+        public async Task<ActionResult<UserDTO>> CreateUser([FromBody] UserDTO userDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var createdUser = await _userService.CreateUserAsync(userDto);
             return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
         }

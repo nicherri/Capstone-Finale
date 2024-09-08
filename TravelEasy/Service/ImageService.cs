@@ -1,14 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TravelEasy.Data;
 using TravelEasy.Models.DTO;
 
 public class ImageService : IImageService
 {
     private readonly TravelEasyContext _context;
+    private readonly ILogger<ImageService> _logger; // Aggiungi questo campo
 
-    public ImageService(TravelEasyContext context)
+    public ImageService(TravelEasyContext context, ILogger<ImageService> logger) // Modifica il costruttore per accettare un ILogger
     {
         _context = context;
+        _logger = logger; // Assegna il logger al campo della classe
     }
 
     public async Task<IEnumerable<ImageDTO>> GetAllImagesAsync()
@@ -59,19 +62,60 @@ public class ImageService : IImageService
         return imageDto;
     }
 
-    public async Task<ImageDTO> UpdateImageAsync(int id, ImageDTO imageDto)
+    public async Task<IActionResult> UpdateImageAsync(int id, ImageDTO imageDto)
     {
-        var image = await _context.Images.FindAsync(id);
-        if (image == null) return null;
+        if (id != imageDto.Id)
+        {
+            _logger.LogWarning($"ID mismatch: {id} != {imageDto.Id}");
+            return new BadRequestObjectResult($"ID mismatch: {id} != {imageDto.Id}");
+        }
 
-        image.CoverImageUrl = imageDto.CoverImageUrl;
-        image.AltText = imageDto.AltText;
-        image.ProductId = imageDto.ProductId;
-        image.BlogPostId = imageDto.BlogPostId;
-        image.ReviewId = imageDto.ReviewId;
+        var existingImage = await _context.Images.FindAsync(id);
+        if (existingImage == null)
+        {
+            _logger.LogWarning($"Image not found: {id}");
+            return new NotFoundObjectResult($"Image not found: {id}");
+        }
 
-        await _context.SaveChangesAsync();
-        return imageDto;
+        _logger.LogInformation($"Updating image {id} with new data");
+
+        // Aggiorna i campi dell'immagine esistente con i nuovi valori
+        existingImage.CoverImageUrl = imageDto.CoverImageUrl;
+        existingImage.Image1Url = imageDto.Image1Url;
+        existingImage.Image2Url = imageDto.Image2Url;
+        existingImage.Image3Url = imageDto.Image3Url;
+        existingImage.AltText = imageDto.AltText;
+        existingImage.ProductId = imageDto.ProductId;
+        existingImage.BlogPostId = imageDto.BlogPostId;
+        existingImage.ReviewId = imageDto.ReviewId;
+        existingImage.CategoryId = imageDto.CategoryId;
+
+        _context.Entry(existingImage).State = EntityState.Modified;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Image {id} updated successfully");
+            return new OkObjectResult($"Image {id} updated successfully");
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _logger.LogError($"Concurrency error when updating image {id}");
+            if (!ImageExists(id))
+            {
+                return new NotFoundObjectResult($"Image not found: {id}");
+            }
+            else
+            {
+                throw;
+            }
+        }
+    }
+
+
+    private bool ImageExists(int id)
+    {
+        return _context.Images.Any(e => e.Id == id);
     }
 
     public async Task<bool> DeleteImageAsync(int id)

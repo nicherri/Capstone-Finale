@@ -84,6 +84,31 @@ namespace TravelEasy.Data
                 .WithMany(s => s.Products)
                 .HasForeignKey(p => p.ShelfId)
                 .OnDelete(DeleteBehavior.Restrict); // Restrizione: non è possibile eliminare Shelf se ci sono Products associati
+
+            // Relazione tra Category e Image
+            modelBuilder.Entity<Image>()
+               .HasOne(i => i.Category)
+               .WithMany(c => c.Images)
+               .HasForeignKey(i => i.CategoryId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+            // Relazione tra Review e Images con NO ACTION su eliminazione
+            modelBuilder.Entity<Image>()
+                .HasOne(i => i.Review)
+                .WithMany(r => r.ReviewImages)
+                .HasForeignKey(i => i.ReviewId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Relazione tra Review e Videos con NO ACTION su eliminazione
+            modelBuilder.Entity<Video>()
+                .HasOne(v => v.Review)
+                .WithMany(r => r.ReviewVideos)
+                .HasForeignKey(v => v.ReviewId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+
+
+
         }
 
 

@@ -38,23 +38,21 @@ namespace TravelEasy.Controllers
             var createdImage = await _imageService.CreateImageAsync(imageDto);
             return CreatedAtAction(nameof(GetImageById), new { id = createdImage.Id }, createdImage);
         }
-
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateImage(int id, ImageDTO imageDto)
+        public async Task<IActionResult> UpdateImage(int id, [FromBody] ImageDTO imageDto)
         {
-            if (id != imageDto.Id)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
 
-            var updatedImage = await _imageService.UpdateImageAsync(id, imageDto);
-            if (updatedImage == null)
-            {
-                return NotFound();
-            }
+            var result = await _imageService.UpdateImageAsync(id, imageDto);
 
-            return NoContent();
+            return result;
         }
+
+
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteImage(int id)

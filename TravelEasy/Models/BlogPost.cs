@@ -19,9 +19,7 @@ public class BlogPost
     public int AuthorId { get; set; }
     public User Author { get; set; }
 
-    public List<Image> Images { get; set; } = new List<Image>();
-
-    public List<Video> Videos { get; set; } = new List<Video>();
-
+    public List<IFormFile> Images { get; set; } = new List<IFormFile>();
+    public List<IFormFile> Videos { get; set; } = new List<IFormFile>();
     public List<Comment> Comments { get; set; } = new List<Comment>();
 }

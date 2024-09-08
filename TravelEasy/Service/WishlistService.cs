@@ -57,18 +57,41 @@ public class WishlistService : IWishlistService
 
     public async Task<WishlistDTO> CreateWishlistAsync(WishlistDTO wishlistDto)
     {
+        // Creiamo la Wishlist e gli elementi della wishlist
         var wishlist = new Wishlist
         {
             Name = wishlistDto.Name,
-            UserId = wishlistDto.UserId
+            UserId = wishlistDto.UserId,
+            WishlistItems = wishlistDto.WishlistItems.Select(wi => new WishlistItem
+            {
+                ProductId = wi.ProductId,
+                Quantity = wi.Quantity
+            }).ToList()
         };
 
+        // Salviamo la Wishlist nel database
         _context.Wishlists.Add(wishlist);
         await _context.SaveChangesAsync();
+
+        // Una volta salvata, recuperiamo i titoli dei prodotti associati alla WishlistItems
+        foreach (var item in wishlist.WishlistItems)
+        {
+            var product = await _context.Products.FindAsync(item.ProductId);
+            if (product != null)
+            {
+                // Popoliamo i campi del ProductTitle
+                var wishlistItemDto = wishlistDto.WishlistItems.FirstOrDefault(wi => wi.ProductId == item.ProductId);
+                if (wishlistItemDto != null)
+                {
+                    wishlistItemDto.ProductTitle = product.Title;  // Usa 'Title' o la proprietà corretta del prodotto
+                }
+            }
+        }
 
         wishlistDto.Id = wishlist.Id;
         return wishlistDto;
     }
+
 
     public async Task<WishlistDTO> UpdateWishlistAsync(int id, WishlistDTO wishlistDto)
     {

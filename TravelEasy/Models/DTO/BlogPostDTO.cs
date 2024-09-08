@@ -5,12 +5,12 @@
         public int Id { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int AuthorId { get; set; }
-        public string AuthorName { get; set; }
-        public List<CommentDTO> Comments { get; set; }
-        public List<ImageDTO> Images { get; set; }
-        public List<VideoDTO> Videos { get; set; }
+
+        public List<CommentDTO> Comments { get; set; } = new List<CommentDTO>();
+        public List<IFormFile> Images { get; set; } = new List<IFormFile>(); // Per il caricamento di immagini
+        public List<IFormFile> Videos { get; set; } = new List<IFormFile>();
     }
 
 

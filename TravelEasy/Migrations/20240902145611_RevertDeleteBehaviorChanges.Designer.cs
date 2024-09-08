@@ -12,8 +12,8 @@ using TravelEasy.Data;
 namespace TravelEasy.Migrations
 {
     [DbContext(typeof(TravelEasyContext))]
-    [Migration("20240826163540_UpdateDeleteBehavior")]
-    partial class UpdateDeleteBehavior
+    [Migration("20240902145611_RevertDeleteBehaviorChanges")]
+    partial class RevertDeleteBehaviorChanges
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -184,7 +184,6 @@ namespace TravelEasy.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AltText")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("BlogPostId")
@@ -198,15 +197,12 @@ namespace TravelEasy.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image1Url")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image2Url")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image3Url")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ProductId")
@@ -607,7 +603,8 @@ namespace TravelEasy.Migrations
 
                     b.HasOne("Category", "Category")
                         .WithMany("Images")
-                        .HasForeignKey("CategoryId");
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Product", "Product")
                         .WithMany("Images")

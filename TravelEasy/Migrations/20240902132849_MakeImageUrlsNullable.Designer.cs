@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TravelEasy.Data;
 
@@ -11,9 +12,11 @@ using TravelEasy.Data;
 namespace TravelEasy.Migrations
 {
     [DbContext(typeof(TravelEasyContext))]
-    partial class TravelEasyContextModelSnapshot : ModelSnapshot
+    [Migration("20240902132849_MakeImageUrlsNullable")]
+    partial class MakeImageUrlsNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -609,8 +612,7 @@ namespace TravelEasy.Migrations
 
                     b.HasOne("Review", "Review")
                         .WithMany("ReviewImages")
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ReviewId");
 
                     b.Navigation("BlogPost");
 
@@ -777,8 +779,7 @@ namespace TravelEasy.Migrations
 
                     b.HasOne("Review", "Review")
                         .WithMany("ReviewVideos")
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ReviewId");
 
                     b.Navigation("BlogPost");
 

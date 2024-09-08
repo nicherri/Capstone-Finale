@@ -36,4 +36,5 @@ namespace TravelEasy.Models
         OrderManager,
         Writer
     }
+
 }
