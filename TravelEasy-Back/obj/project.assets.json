@@ -4112,11 +4112,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy\\TravelEasy.csproj",
+      "projectUniqueName": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy-Back\\TravelEasy.csproj",
       "projectName": "TravelEasy",
-      "projectPath": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy\\TravelEasy.csproj",
+      "projectPath": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy-Back\\TravelEasy.csproj",
       "packagesPath": "C:\\Users\\nicol\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy\\obj\\",
+      "outputPath": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy-Back\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\nicol\\AppData\\Roaming\\NuGet\\NuGet.Config",

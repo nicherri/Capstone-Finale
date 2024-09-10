@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "hlMWcOMA1ac=",
+  "dgSpecHash": "yFwI8tl9yR8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy\\TravelEasy.csproj",
+  "projectFilePath": "C:\\Users\\nicol\\Desktop\\Capstone\\Capstone-Finale\\TravelEasy-Back\\TravelEasy.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\nicol\\.nuget\\packages\\azure.core\\1.35.0\\azure.core.1.35.0.nupkg.sha512",
     "C:\\Users\\nicol\\.nuget\\packages\\azure.identity\\1.10.3\\azure.identity.1.10.3.nupkg.sha512",
