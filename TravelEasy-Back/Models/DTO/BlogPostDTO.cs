@@ -9,8 +9,8 @@
         public int AuthorId { get; set; }
 
         public List<CommentDTO> Comments { get; set; } = new List<CommentDTO>();
-        public List<IFormFile> Images { get; set; } = new List<IFormFile>(); // Per il caricamento di immagini
-        public List<IFormFile> Videos { get; set; } = new List<IFormFile>();
+        public List<string> ImageUrls { get; set; } = new List<string>();
+        public List<string> VideoUrls { get; set; } = new List<string>();
     }
 
 

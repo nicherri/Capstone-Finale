@@ -41,14 +41,14 @@ namespace TravelEasy.Data
                 .HasOne(c => c.User)
                 .WithMany()
                 .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.NoAction); // Nessuna cascata di cancellazione qui
+                .OnDelete(DeleteBehavior.NoAction);
 
             // Relazione tra Comment e BlogPost
             modelBuilder.Entity<Comment>()
                 .HasOne(c => c.BlogPost)
                 .WithMany(bp => bp.Comments)
                 .HasForeignKey(c => c.BlogPostId)
-                .OnDelete(DeleteBehavior.Cascade); // Commenti eliminati con BlogPost
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Relazione tra Area e Shelving
             modelBuilder.Entity<Area>()
@@ -69,51 +69,61 @@ namespace TravelEasy.Data
                 .HasOne(p => p.Area)
                 .WithMany(a => a.Products)
                 .HasForeignKey(p => p.AreaId)
-                .OnDelete(DeleteBehavior.Restrict); // Restrizione: non è possibile eliminare l'Area se ci sono Products associati
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Relazione tra Product e Shelving
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Shelving)
                 .WithMany(s => s.Products)
                 .HasForeignKey(p => p.ShelvingId)
-                .OnDelete(DeleteBehavior.Restrict); // Restrizione: non è possibile eliminare Shelving se ci sono Products associati
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Relazione tra Product e Shelf
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Shelf)
                 .WithMany(s => s.Products)
                 .HasForeignKey(p => p.ShelfId)
-                .OnDelete(DeleteBehavior.Restrict); // Restrizione: non è possibile eliminare Shelf se ci sono Products associati
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Relazione tra Category e Image
-            modelBuilder.Entity<Image>()
-               .HasOne(i => i.Category)
-               .WithMany(c => c.Images)
-               .HasForeignKey(i => i.CategoryId)
-               .OnDelete(DeleteBehavior.Cascade);
+            // Relazione tra Area e Shelving
+            modelBuilder.Entity<Area>()
+                .HasMany(a => a.Shelvings)
+                .WithOne(s => s.Area)
+                .HasForeignKey(s => s.AreaId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascata di cancellazione per Shelving
 
-            // Relazione tra Review e Images con NO ACTION su eliminazione
-            modelBuilder.Entity<Image>()
-                .HasOne(i => i.Review)
-                .WithMany(r => r.ReviewImages)
+            // Relazione tra Shelving e Shelf
+            modelBuilder.Entity<Shelving>()
+                .HasMany(s => s.Shelves)
+                .WithOne(s => s.Shelving)
+                .HasForeignKey(s => s.ShelvingId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascata di cancellazione per Shelf
+
+            // Relazione tra Review e Image
+            modelBuilder.Entity<Review>()
+                .HasMany(r => r.ReviewImages)
+                .WithOne(i => i.Review)
                 .HasForeignKey(i => i.ReviewId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);  // Usa Restrict per prevenire cicli
 
-            // Relazione tra Review e Videos con NO ACTION su eliminazione
-            modelBuilder.Entity<Video>()
-                .HasOne(v => v.Review)
-                .WithMany(r => r.ReviewVideos)
+            // Relazione tra Review e Video
+            modelBuilder.Entity<Review>()
+                .HasMany(r => r.ReviewVideos)
+                .WithOne(v => v.Review)
                 .HasForeignKey(v => v.ReviewId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);  // Usa Restrict per prevenire cicli
 
 
-
-
+            // Relazione tra Image e BlogPost
+            modelBuilder.Entity<Image>()
+                .HasOne(i => i.BlogPost)
+                .WithMany(b => b.Images)
+                .HasForeignKey(i => i.BlogPostId)
+                .OnDelete(DeleteBehavior.SetNull);  // SetNull per evitare cancellazioni a cascata
         }
 
 
-
     }
-
 }
+
 

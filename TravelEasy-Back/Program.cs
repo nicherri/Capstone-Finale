@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http.Features;  // Aggiungi questa importazione per FormOptions
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using TravelEasy.Data;
@@ -7,12 +7,26 @@ using TravelEasy.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configura il servizio CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:4200") // Permetti solo richieste dal frontend Angular
+                  .AllowAnyHeader()                     // Permetti qualsiasi header
+                  .AllowAnyMethod();                    // Permetti tutti i metodi HTTP (GET, POST, PUT, DELETE, ecc.)
+        });
+});
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 // Configura il servizio per il DbContext
 builder.Services.AddDbContext<TravelEasyContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Registrazione dei servizi
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IAreaService, AreaService>();
 builder.Services.AddScoped<IBlogPostService, BlogPostService>();
@@ -30,20 +44,15 @@ builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IWishlistItemService, WishlistItemService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 
-// Configura i controller con opzioni JSON
 builder.Services.AddControllersWithViews().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Imposta il limite di upload a 100 MB per i file multimediali
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 104857600; // 100MB
 });
-
-// Aggiungi altri servizi necessari
-builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -55,9 +64,17 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Middleware per servire i file statici dalla cartella wwwroot
+app.UseStaticFiles();
+
+// Aggiungi qui il middleware per servire file statici da una cartella personalizzata
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Abilita CORS
+app.UseCors("AllowAngularApp");
 
 app.UseAuthorization();
 
@@ -66,3 +83,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+

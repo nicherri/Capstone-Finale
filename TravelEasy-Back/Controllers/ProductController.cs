@@ -31,37 +31,46 @@ namespace TravelEasy.Controllers
             return Ok(product);
         }
 
+
         [HttpPost]
-        public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> CreateProduct(
+      [FromForm] ProductDTO productDto,
+      [FromForm] List<IFormFile> imageFiles,
+      [FromForm] List<IFormFile> videoFiles)
         {
             if (!ModelState.IsValid)
             {
-                // Ritorna dettagli degli errori di validazione
                 return BadRequest(ModelState);
             }
 
-            var createdProduct = await _productService.CreateProductAsync(productDto);
+            // Usa un log per verificare che i file siano stati ricevuti
+            Console.WriteLine($"Immagini ricevute: {imageFiles.Count}");
+            Console.WriteLine($"Video ricevuti: {videoFiles.Count}");
+
+            var createdProduct = await _productService.CreateProductAsync(productDto, imageFiles, videoFiles);
             return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
         }
 
 
 
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, ProductDTO productDto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, List<IFormFile> imageFiles, List<IFormFile> videoFiles)
         {
-            if (id != productDto.Id)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
 
-            var updatedProduct = await _productService.UpdateProductAsync(id, productDto);
+            var updatedProduct = await _productService.UpdateProductAsync(id, productDto, imageFiles, videoFiles);
             if (updatedProduct == null)
             {
                 return NotFound();
             }
 
-            return NoContent();
+            return Ok(updatedProduct);
         }
+
 
 
 

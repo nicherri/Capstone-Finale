@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore; // Assicurati che ci sia questa direttiva
 using TravelEasy.Data;
 using TravelEasy.Interface;
 using TravelEasy.Models.DTO;
@@ -22,6 +22,8 @@ public class ShelvingService : IShelvingService
         {
             Id = shelving.Id,
             Name = shelving.Name,
+            IsOccupied = shelving.Products.Any(),  // Controlla se la scaffalatura ha prodotti
+
             Shelves = shelving.Shelves.Select(shelf => new ShelfDTO
             {
                 Id = shelf.Id,
@@ -46,6 +48,8 @@ public class ShelvingService : IShelvingService
         {
             Id = shelving.Id,
             Name = shelving.Name,
+            IsOccupied = shelving.Products.Any(),  // Controlla se la scaffalatura ha prodotti
+
             Shelves = shelving.Shelves.Select(shelf => new ShelfDTO
             {
                 Id = shelf.Id,
@@ -60,15 +64,15 @@ public class ShelvingService : IShelvingService
         var shelving = new Shelving
         {
             Name = shelvingDto.Name,
-            AreaId = shelvingDto.AreaId
+            AreaId = shelvingDto.AreaId,
+            IsOccupied = false // Quando viene creato, il shelving è vuoto
         };
 
-        // Creazione automatica di 4 shelf
-        for (int i = 0; i < 4; i++)
+        for (int i = 1; i <= 4; i++)
         {
             var shelf = new Shelf
             {
-                Name = $"Shelf {i + 1} for {shelving.Name}",
+                Name = $"Shelf {i} for {shelving.Name}",
                 Shelving = shelving
             };
             shelving.Shelves.Add(shelf);
@@ -87,7 +91,6 @@ public class ShelvingService : IShelvingService
 
         return shelvingDto;
     }
-
 
     public async Task<ShelvingDTO> UpdateShelvingAsync(int id, ShelvingDTO shelvingDto)
     {
@@ -123,7 +126,6 @@ public class ShelvingService : IShelvingService
             return false;
         }
 
-        // Rimuovi tutte le shelf associate
         _context.Shelves.RemoveRange(shelving.Shelves);
 
         _context.Shelvings.Remove(shelving);
@@ -131,7 +133,7 @@ public class ShelvingService : IShelvingService
         return true;
     }
 
-
+    // Metodo mancante: GetProductsByShelvingAsync
     public async Task<IEnumerable<ProductDTO>> GetProductsByShelvingAsync(int shelvingId)
     {
         var products = await _context.Products

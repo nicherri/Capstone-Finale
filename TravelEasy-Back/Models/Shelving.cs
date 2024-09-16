@@ -8,6 +8,9 @@ public class Shelving
     [MaxLength(100)]
     public string Name { get; set; }
 
+    [Required]
+    public bool IsOccupied { get; set; }
+
     public int AreaId { get; set; }
     public Area Area { get; set; }
 

@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
+
+        public bool IsOccupied { get; set; }
         public List<ProductDTO> Products { get; set; }
         public List<ShelvingDTO> Shelvings { get; set; } = new List<ShelvingDTO>();
 

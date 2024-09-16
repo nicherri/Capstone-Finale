@@ -22,10 +22,12 @@ public class AreaService : IAreaService
         {
             Id = area.Id,
             Name = area.Name,
+            IsOccupied = area.Shelvings.Any(s => s.Products.Any()),  // Controlla se l'area è occupata
             Shelvings = area.Shelvings.Select(shelving => new ShelvingDTO
             {
                 Id = shelving.Id,
                 Name = shelving.Name,
+                IsOccupied = shelving.Products.Any(),  // Controlla se la scaffalatura è occupata
                 Shelves = shelving.Shelves.Select(shelf => new ShelfDTO
                 {
                     Id = shelf.Id,
@@ -51,10 +53,12 @@ public class AreaService : IAreaService
         {
             Id = area.Id,
             Name = area.Name,
+            IsOccupied = area.Shelvings.Any(s => s.Products.Any()),  // Controlla se l'area è occupata
             Shelvings = area.Shelvings.Select(shelving => new ShelvingDTO
             {
                 Id = shelving.Id,
                 Name = shelving.Name,
+                IsOccupied = shelving.Products.Any(),
                 Shelves = shelving.Shelves.Select(shelf => new ShelfDTO
                 {
                     Id = shelf.Id,
@@ -68,16 +72,17 @@ public class AreaService : IAreaService
     {
         var area = new Area
         {
-            Name = areaDto.Name
+            Name = areaDto.Name,
+            IsOccupied = false // Inizialmente vuoto
         };
 
-        // Automatically create 15 shelvings and 4 shelves for each shelving
         for (int i = 1; i <= 15; i++)
         {
             var shelving = new Shelving
             {
                 Name = $"Shelving {i} in {area.Name}",
-                Area = area
+                Area = area,
+                IsOccupied = false
             };
 
             for (int j = 1; j <= 4; j++)
@@ -121,10 +126,19 @@ public class AreaService : IAreaService
 
     public async Task<bool> DeleteAreaAsync(int id)
     {
-        var area = await _context.Areas.FindAsync(id);
+        var area = await _context.Areas
+            .Include(a => a.Shelvings)
+            .ThenInclude(s => s.Products)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
         if (area == null)
         {
             return false;
+        }
+
+        if (area.Shelvings.Any(s => s.Products.Any()))
+        {
+            return false; // Non eliminare se ci sono prodotti associati
         }
 
         _context.Areas.Remove(area);
@@ -132,6 +146,7 @@ public class AreaService : IAreaService
         return true;
     }
 
+    // Implementazione mancante per GetProductsByAreaAsync
     public async Task<IEnumerable<ProductDTO>> GetProductsByAreaAsync(int areaId)
     {
         var products = await _context.Products
@@ -142,7 +157,8 @@ public class AreaService : IAreaService
         {
             Id = product.Id,
             Title = product.Title,
-            Price = product.Price
+            Price = product.Price,
+            Description = product.Description
         }).ToList();
     }
 }

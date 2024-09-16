@@ -52,5 +52,6 @@ public class Product
     public List<Product> RelatedProducts { get; set; } = new List<Product>();
 
 
+    [Required]
     public List<Benefit> Benefits { get; set; } = new List<Benefit>();
 }

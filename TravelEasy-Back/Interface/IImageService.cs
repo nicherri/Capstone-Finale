@@ -6,7 +6,7 @@ public interface IImageService
     Task<IEnumerable<ImageDTO>> GetAllImagesAsync();
     Task<ImageDTO> GetImageByIdAsync(int id);
     Task<ImageDTO> CreateImageAsync(ImageDTO imageDto);
-    Task<IActionResult> UpdateImageAsync(int id, ImageDTO imageDto); // Firma corretta
+    Task<IActionResult> UpdateImageAsync(int id, ImageDTO imageDto);
     Task<bool> DeleteImageAsync(int id);
     Task<IEnumerable<ImageDTO>> GetImagesByProductIdAsync(int productId);
     Task<IEnumerable<ImageDTO>> GetImagesByBlogPostIdAsync(int blogPostId);

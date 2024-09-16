@@ -17,12 +17,10 @@ public class ProductDTO
     public string ShelvingName { get; set; }
     public int ShelfId { get; set; }
     public string ShelfName { get; set; }
-    public List<ImageDTO> Images { get; set; }
-    public List<VideoDTO> Videos { get; set; }
-    public List<ReviewDTO> Reviews { get; set; }
+    public List<ImageDTO> Images { get; set; } = new List<ImageDTO>();
+    public List<VideoDTO>? Videos { get; set; }
+    public List<ReviewDTO>? Reviews { get; set; }
     public List<FAQDTO> FAQs { get; set; }
     public List<RelatedProductDTO> RelatedProducts { get; set; }
-    public List<string> ImageUrls { get; set; }
-
-    public List<BenefitDTO> Benefits { get; set; } = new List<BenefitDTO>();
+    public List<BenefitDTO>? Benefits { get; set; } = new List<BenefitDTO>();
 }

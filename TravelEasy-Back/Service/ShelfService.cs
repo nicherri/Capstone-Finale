@@ -13,19 +13,25 @@ public class ShelfService : IShelfService
 
     public async Task<IEnumerable<ShelfDTO>> GetAllShelvesAsync()
     {
-        var shelves = await _context.Shelves.ToListAsync();
+        var shelves = await _context.Shelves
+              .Include(s => s.Products)
+              .ToListAsync();
 
         return shelves.Select(shelf => new ShelfDTO
         {
             Id = shelf.Id,
             Name = shelf.Name,
-            ShelvingId = shelf.ShelvingId
+            ShelvingId = shelf.ShelvingId,
+            IsOccupied = shelf.IsOccupied
         }).ToList();
     }
 
     public async Task<ShelfDTO> GetShelfByIdAsync(int id)
     {
-        var shelf = await _context.Shelves.FindAsync(id);
+        var shelf = await _context.Shelves
+            .Include(s => s.Products)  // Includiamo i prodotti associati
+            .FirstOrDefaultAsync(s => s.Id == id);
+
         if (shelf == null)
         {
             return null;
@@ -35,7 +41,16 @@ public class ShelfService : IShelfService
         {
             Id = shelf.Id,
             Name = shelf.Name,
-            ShelvingId = shelf.ShelvingId
+            ShelvingId = shelf.ShelvingId,
+            IsOccupied = shelf.IsOccupied,
+
+            // Mappiamo i prodotti associati al DTO
+            Products = shelf.Products.Select(product => new ProductDTO
+            {
+                Id = product.Id,
+                Title = product.Title,
+                Price = product.Price
+            }).ToList()
         };
     }
 
@@ -44,7 +59,8 @@ public class ShelfService : IShelfService
         var shelf = new Shelf
         {
             Name = shelfDto.Name,
-            ShelvingId = shelfDto.ShelvingId
+            ShelvingId = shelfDto.ShelvingId,
+            IsOccupied = shelfDto.IsOccupied
         };
 
         _context.Shelves.Add(shelf);
@@ -64,6 +80,7 @@ public class ShelfService : IShelfService
 
         shelf.Name = shelfDto.Name;
         shelf.ShelvingId = shelfDto.ShelvingId;
+        shelf.IsOccupied = shelfDto.IsOccupied;
 
         await _context.SaveChangesAsync();
         return shelfDto;

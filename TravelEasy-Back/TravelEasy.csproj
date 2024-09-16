@@ -7,6 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\Nuova cartella1\**" />
+    <Compile Remove="wwwroot\Nuova cartella2\**" />
+    <Compile Remove="wwwroot\Nuova cartella3\**" />
+    <Content Remove="wwwroot\Nuova cartella1\**" />
+    <Content Remove="wwwroot\Nuova cartella2\**" />
+    <Content Remove="wwwroot\Nuova cartella3\**" />
+    <EmbeddedResource Remove="wwwroot\Nuova cartella1\**" />
+    <EmbeddedResource Remove="wwwroot\Nuova cartella2\**" />
+    <EmbeddedResource Remove="wwwroot\Nuova cartella3\**" />
+    <None Remove="wwwroot\Nuova cartella1\**" />
+    <None Remove="wwwroot\Nuova cartella2\**" />
+    <None Remove="wwwroot\Nuova cartella3\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
       <PrivateAssets>all</PrivateAssets>
@@ -17,6 +33,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+    <Folder Include="wwwroot\images\products\" />
+    <Folder Include="wwwroot\videos\products\" />
   </ItemGroup>
 
 </Project>

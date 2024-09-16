@@ -185,35 +185,66 @@ public class ReviewService : IReviewService
 
     public async Task<bool> DeleteReviewAsync(int id)
     {
+        // Trova la recensione per ID, includendo sia le immagini che i video collegati
         var review = await _context.Reviews
-            .Include(r => r.ReviewImages)
-            .Include(r => r.ReviewVideos)
+            .Include(r => r.ReviewImages)   // Include la lista delle immagini della recensione
+            .Include(r => r.ReviewVideos)   // Include la lista dei video della recensione
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (review == null)
         {
-            return false;
+            return false;  // Se la recensione non esiste
         }
 
-        // Elimina tutte le immagini associate alla recensione
-        if (review.ReviewImages.Any())
+        // Elimina manualmente le immagini collegate alla recensione
+        if (review.ReviewImages != null && review.ReviewImages.Any())
         {
-            _context.Images.RemoveRange(review.ReviewImages);
+            foreach (var image in review.ReviewImages)
+            {
+                // Elimina i file immagine dal file system
+                DeleteFileIfExists(image.CoverImageUrl);
+                DeleteFileIfExists(image.Image1Url);
+                DeleteFileIfExists(image.Image2Url);
+                DeleteFileIfExists(image.Image3Url);
+
+                // Rimuovi l'immagine dal database
+                _context.Images.Remove(image);
+            }
         }
 
-        // Elimina tutti i video associati alla recensione
-        if (review.ReviewVideos.Any())
+        // Elimina manualmente i video collegati alla recensione
+        if (review.ReviewVideos != null && review.ReviewVideos.Any())
         {
-            _context.Videos.RemoveRange(review.ReviewVideos);
+            foreach (var video in review.ReviewVideos)
+            {
+                // Elimina il file video dal file system
+                DeleteFileIfExists(video.VideoUrl);
+
+                // Rimuovi il video dal database
+                _context.Videos.Remove(video);
+            }
         }
 
-        // Elimina la recensione stessa
+        // Elimina la recensione dal database
         _context.Reviews.Remove(review);
 
+        // Salva le modifiche al database
         await _context.SaveChangesAsync();
 
         return true;
     }
+
+    // Questa funzione controlla se un file esiste e, se esiste, lo elimina
+    private void DeleteFileIfExists(string filePath)
+    {
+        if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath)) // Controlla se il file esiste
+        {
+            File.Delete(filePath); // Elimina il file
+        }
+    }
+
+
+
 
 
     public async Task<IEnumerable<ReviewDTO>> GetReviewsByProductIdAsync(int productId)

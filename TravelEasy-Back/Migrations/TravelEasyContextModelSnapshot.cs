@@ -30,6 +30,9 @@ namespace TravelEasy.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -323,6 +326,9 @@ namespace TravelEasy.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -348,6 +354,9 @@ namespace TravelEasy.Migrations
 
                     b.Property<int>("AreaId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -510,7 +519,6 @@ namespace TravelEasy.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AltText")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("BlogPostId")
@@ -596,12 +604,12 @@ namespace TravelEasy.Migrations
                 {
                     b.HasOne("BlogPost", "BlogPost")
                         .WithMany("Images")
-                        .HasForeignKey("BlogPostId");
+                        .HasForeignKey("BlogPostId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Category", "Category")
                         .WithMany("Images")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("CategoryId");
 
                     b.HasOne("Product", "Product")
                         .WithMany("Images")
@@ -610,7 +618,7 @@ namespace TravelEasy.Migrations
                     b.HasOne("Review", "Review")
                         .WithMany("ReviewImages")
                         .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BlogPost");
 
@@ -778,7 +786,7 @@ namespace TravelEasy.Migrations
                     b.HasOne("Review", "Review")
                         .WithMany("ReviewVideos")
                         .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("BlogPost");
 

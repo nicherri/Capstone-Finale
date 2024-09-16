@@ -8,6 +8,9 @@ public class Area
     [MaxLength(100)]
     public string Name { get; set; }
 
+    [Required]
+    public bool IsOccupied { get; set; }
+
     public List<Shelving> Shelvings { get; set; } = new List<Shelving>();
 
     public List<Product> Products { get; set; } = new List<Product>();

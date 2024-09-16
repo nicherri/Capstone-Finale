@@ -7,7 +7,7 @@ public class Video
     [Required]
     public string VideoUrl { get; set; }
 
-    public string AltText { get; set; }
+    public string? AltText { get; set; }
 
     public int? ProductId { get; set; }
     public Product Product { get; set; }
