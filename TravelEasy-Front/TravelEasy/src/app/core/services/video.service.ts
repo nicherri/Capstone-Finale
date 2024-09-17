@@ -23,9 +23,10 @@ export class VideoService {
     return this.http.post<Video>(this.baseUrl, video);
   }
 
-  updateVideo(id: number, video: Video): Observable<Video> {
-    return this.http.put<Video>(`${this.baseUrl}/${id}`, video);
+  updateVideo(productId: number, formData: FormData): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/product/${productId}/videos`, formData);
   }
+
 
   deleteVideo(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);

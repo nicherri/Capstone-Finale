@@ -299,52 +299,84 @@ public class ProductService : IProductService
         product.ShelfId = productDto.ShelfId;
         product.AverageRating = productDto.AverageRating;
 
-        // Aggiornamento delle immagini
+        // Gestione delle immagini
         if (imageFiles != null && imageFiles.Any())
         {
-            // Rimuove le immagini esistenti
-            _context.Images.RemoveRange(product.Images);
+            // Ottieni tutti i record esistenti per il prodotto
+            var imageRecords = product.Images.ToList();
 
-            // Crea una nuova lista di immagini
-            var images = new List<Image>();
+            // Ottieni l'ultimo record di immagini o creane uno nuovo se necessario
+            var lastImageRecord = imageRecords.LastOrDefault();
 
-            var validImages = imageFiles.Take(4).ToList();
-
-            for (int i = 0; i < validImages.Count; i++)
+            // Se non ci sono record esistenti o l'ultimo record è già pieno, crea un nuovo record
+            if (lastImageRecord == null || (lastImageRecord.CoverImageUrl != null && lastImageRecord.Image1Url != null && lastImageRecord.Image2Url != null && lastImageRecord.Image3Url != null))
             {
-                var file = validImages[i];
+                lastImageRecord = new Image
+                {
+                    ProductId = product.Id,
+                    AltText = "Default AltText"
+                };
+                _context.Images.Add(lastImageRecord);
+                imageRecords.Add(lastImageRecord); // Aggiungilo alla lista dei record
+            }
+
+            // Crea una cartella per il prodotto, se non esiste
+            var productFolder = Path.Combine("wwwroot/images/products", product.Title.Replace(" ", "_"));
+            if (!Directory.Exists(productFolder))
+            {
+                Directory.CreateDirectory(productFolder);
+            }
+
+            // Aggiunge ogni immagine ai record di immagini esistenti o ne crea di nuovi se necessario
+            foreach (var file in imageFiles)
+            {
                 if (file.Length > 0)
                 {
-                    var imagePath = Path.Combine("wwwroot/images/products", file.FileName);
-
+                    // Salva l'immagine fisicamente
+                    var imagePath = Path.Combine(productFolder, file.FileName);
                     using (var stream = new FileStream(imagePath, FileMode.Create))
                     {
                         await file.CopyToAsync(stream);
                     }
 
-                    var newImage = new Image
+                    // Inserisci l'immagine nei campi disponibili del record corrente
+                    if (lastImageRecord.CoverImageUrl == null)
                     {
-                        CoverImageUrl = (i == 0) ? $"/images/products/{file.FileName}" : null,
-                        Image1Url = (i == 1) ? $"/images/products/{file.FileName}" : null,
-                        Image2Url = (i == 2) ? $"/images/products/{file.FileName}" : null,
-                        Image3Url = (i == 3) ? $"/images/products/{file.FileName}" : null,
-                        ProductId = product.Id
-                    };
-                    images.Add(newImage);
+                        lastImageRecord.CoverImageUrl = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
+                    }
+                    else if (lastImageRecord.Image1Url == null)
+                    {
+                        lastImageRecord.Image1Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
+                    }
+                    else if (lastImageRecord.Image2Url == null)
+                    {
+                        lastImageRecord.Image2Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
+                    }
+                    else if (lastImageRecord.Image3Url == null)
+                    {
+                        lastImageRecord.Image3Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
+                    }
+                    else
+                    {
+                        // Se il record è pieno, crea un nuovo record di immagini e continua
+                        lastImageRecord = new Image
+                        {
+                            ProductId = product.Id,
+                            CoverImageUrl = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}",
+                            AltText = "Default AltText"
+                        };
+                        _context.Images.Add(lastImageRecord);
+                        imageRecords.Add(lastImageRecord); // Aggiungi alla lista dei record
+                    }
                 }
             }
-
-            // Aggiunge le nuove immagini
-            product.Images = images;
         }
 
         // Aggiornamento dei video
         if (videoFiles != null && videoFiles.Any())
         {
-            // Rimuove i video esistenti
             _context.Videos.RemoveRange(product.Videos);
 
-            // Crea una nuova lista di video
             var videos = new List<Video>();
 
             foreach (var file in videoFiles)
@@ -366,12 +398,12 @@ public class ProductService : IProductService
                 }
             }
 
-            // Aggiunge i nuovi video
             product.Videos = videos;
         }
 
         await _context.SaveChangesAsync();
 
+        // Restituisci il DTO del prodotto aggiornato
         return new ProductDTO
         {
             Id = product.Id,
@@ -381,13 +413,13 @@ public class ProductService : IProductService
             Price = product.Price,
             NumberOfPieces = product.NumberOfPieces,
             CategoryId = product.CategoryId,
-            CategoryName = product.Category != null ? product.Category.Name : null,
+            CategoryName = product.Category?.Name,
             AreaId = product.AreaId,
-            AreaName = product.Area != null ? product.Area.Name : null,
+            AreaName = product.Area?.Name,
             ShelvingId = product.ShelvingId,
-            ShelvingName = product.Shelving != null ? product.Shelving.Name : null,
+            ShelvingName = product.Shelving?.Name,
             ShelfId = product.ShelfId,
-            ShelfName = product.Shelf != null ? product.Shelf.Name : null,
+            ShelfName = product.Shelf?.Name,
             AverageRating = product.AverageRating,
             Images = product.Images.Select(i => new ImageDTO
             {

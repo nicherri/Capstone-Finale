@@ -23,9 +23,10 @@ export class ImageService {
     return this.http.post<Image>(this.baseUrl, image);
   }
 
-  updateImage(id: number, image: Image): Observable<Image> {
-    return this.http.put<Image>(`${this.baseUrl}/${id}`, image);
+  updateImage(productId: number, formData: FormData): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/product/${productId}/images`, formData);
   }
+
 
   deleteImage(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);

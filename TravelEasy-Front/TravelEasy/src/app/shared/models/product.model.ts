@@ -14,7 +14,7 @@ export interface Product {
   numberOfPieces: number;
   categoryId: number;
   categoryName: string;
-  areaid:number;
+  areaId:number;
   areaName?: string;
   shelvingId?: number;
   shelvingName?: string;

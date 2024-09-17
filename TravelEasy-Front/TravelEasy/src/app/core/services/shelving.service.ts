@@ -15,6 +15,10 @@ export class ShelvingService {
     return this.http.get<Shelving[]>(this.baseUrl);
   }
 
+  getShelvingsByArea(areaId: number): Observable<Shelving[]> {
+    return this.http.get<Shelving[]>(`${this.baseUrl}/${areaId}`);
+  }
+
   getShelvingById(id: number): Observable<Shelving> {
     return this.http.get<Shelving>(`${this.baseUrl}/${id}`);
   }

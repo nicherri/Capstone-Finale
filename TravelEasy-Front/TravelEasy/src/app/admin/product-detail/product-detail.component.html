@@ -1,154 +1,152 @@
 <div *ngIf="product" class="container mt-4">
   <h2 class="mb-4">Modifica Prodotto: {{ product.title }}</h2>
 
-  <!-- Sezione Immagini -->
-  <div class="mb-4">
-    <h3>Immagini</h3>
-    <ul class="list-group">
-      <li *ngFor="let image of product?.images; let i = index" class="list-group-item">
-        <div class="input-group mb-2">
-          <input class="form-control" [(ngModel)]="image.coverImageUrl" placeholder="Modifica URL immagine">
-          <button class="btn btn-danger" (click)="removeImage(i)">Rimuovi</button>
-        </div>
-      </li>
-    </ul>
-    <div class="input-group mt-2">
-      <input class="form-control" [(ngModel)]="newImage.coverImageUrl" placeholder="URL nuova immagine">
-      <button class="btn btn-success" (click)="addImage()">Aggiungi Immagine</button>
-    </div>
-  </div>
+  <!-- Sezione Immagini e Video -->
+  <div class="row">
+    <div class="col-md-6">
+      <h3>Immagini e Video</h3>
 
-  <!-- Sezione Modifica Prodotto -->
-  <div class="mb-4">
-    <h3>Modifica Informazioni Prodotto</h3>
-    <div class="form-group mb-3">
-      <label for="title">Titolo:</label>
-      <input id="title" class="form-control" [(ngModel)]="product.title" placeholder="Titolo">
+      <!-- Immagini -->
+      <div class="form-group mb-3">
+        <label for="image">Carica Immagini:</label>
+        <input id="image" type="file" class="form-control" (change)="onImageUpload($event)" multiple />
+      </div>
+
+      <div class="row">
+        <div *ngFor="let image of product?.images" class="col-md-4">
+          <img [src]="image.coverImageUrl" alt="Immagine prodotto" class="img-fluid mb-2" />
+          <button class="btn btn-danger btn-sm" (click)="removeImage(image)">Rimuovi</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-2" (click)="saveImages()">Salva Immagini</button>
+
+      <!-- Video -->
+      <div class="form-group mb-3">
+        <label for="video">Carica Video:</label>
+        <input id="video" type="file" class="form-control" (change)="onVideoUpload($event)" multiple />
+      </div>
+
+      <div class="row">
+        <div *ngFor="let video of product?.videos" class="col-md-12">
+          <video controls class="w-100 mb-2">
+            <source [src]="video.videoUrl" type="video/mp4" />
+            Il tuo browser non supporta i video.
+          </video>
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-2" (click)="saveVideos()">Salva Video</button>
     </div>
-    <div class="form-group mb-3">
-      <label for="subtitle">Sottotitolo:</label>
-      <input id="subtitle" class="form-control" [(ngModel)]="product.subtitle" placeholder="Sottotitolo">
-    </div>
-    <div class="form-group mb-3">
-      <label for="description">Descrizione:</label>
-      <textarea id="description" class="form-control" [(ngModel)]="product.description" placeholder="Descrizione"></textarea>
-    </div>
-    <div class="form-group mb-3">
-      <label for="price">Prezzo:</label>
-      <input id="price" class="form-control" [(ngModel)]="product.price" type="number" placeholder="Prezzo">
-    </div>
-    <div class="form-group mb-3">
-      <label for="numberOfPieces">Numero di pezzi:</label>
-      <input id="numberOfPieces" class="form-control" [(ngModel)]="product.numberOfPieces" type="number" placeholder="Numero di pezzi">
+
+    <!-- Colonna per i dettagli del prodotto -->
+    <div class="col-md-6">
+      <h3>Modifica Informazioni Prodotto</h3>
+
+      <!-- Titolo -->
+      <div class="form-group mb-3">
+        <label for="title">Titolo:</label>
+        <input id="title" class="form-control" [(ngModel)]="product.title" placeholder="Titolo" />
+      </div>
+
+      <!-- Prezzo -->
+      <div class="form-group mb-3">
+        <label for="price">Prezzo:</label>
+        <input id="price" class="form-control" [(ngModel)]="product.price" type="number" placeholder="Prezzo" />
+      </div>
+
+      <!-- Descrizione -->
+      <div class="form-group mb-3">
+        <label for="description">Descrizione:</label>
+        <app-quill-text-editor [(ngModel)]="product.description"></app-quill-text-editor>
+      </div>
+
+      <!-- Selezione Categoria -->
+      <div class="form-group mb-3">
+        <label for="category">Categoria:</label>
+        <select id="category" class="form-select" [(ngModel)]="product.categoryId">
+          <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+        </select>
+      </div>
+
+      <!-- Pulsante per salvare il prodotto -->
+      <button class="btn btn-primary" (click)="updateProduct()">Salva Modifiche Prodotto</button>
     </div>
   </div>
 
   <!-- Sezione Benefici -->
-  <div class="mb-4">
-    <h3>Benefici</h3>
-    <ul class="list-group">
-      <li *ngFor="let benefit of product?.benefits; let i = index" class="list-group-item">
-        <div class="input-group mb-2">
-          <input class="form-control" [(ngModel)]="benefit.description" placeholder="Modifica beneficio">
-          <button class="btn btn-danger" (click)="removeBenefit(i)">Rimuovi</button>
+<div class="mt-4">
+  <h3>Benefici</h3>
+  <ul class="list-group">
+    <li *ngFor="let benefit of product?.benefits; let i = index" class="list-group-item">
+      <div class="input-group mb-2">
+        <textarea [(ngModel)]="benefit.description" class="form-control" placeholder="Descrizione del beneficio"></textarea>
+        <div class="input-group-append">
+          <button class="btn btn-success" (click)="updateBenefit(benefit)">Salva</button>
+          <button class="btn btn-danger" (click)="removeBenefit(benefit.id)">Rimuovi</button>
         </div>
-      </li>
-    </ul>
-    <div class="input-group mt-2">
-      <input class="form-control" [(ngModel)]="newBenefit.description" placeholder="Nuovo beneficio">
+      </div>
+    </li>
+  </ul>
+
+  <div class="input-group mt-2">
+    <app-quill-text-editor [(ngModel)]="Benefit.description" placeholder="Nuovo beneficio"></app-quill-text-editor>
+    <div class="input-group-append">
       <button class="btn btn-success" (click)="addBenefit()">Aggiungi Beneficio</button>
     </div>
   </div>
+</div>
 
-  <!-- Sezione Video -->
-  <div class="mb-4">
-    <h3>Video</h3>
-    <ul class="list-group">
-      <li *ngFor="let video of product?.videos; let i = index" class="list-group-item">
-        <div class="input-group mb-2">
-          <input class="form-control" [(ngModel)]="video.videoUrl" placeholder="Modifica URL video">
-          <input class="form-control" [(ngModel)]="video.altText" placeholder="Testo alternativo">
-          <button class="btn btn-danger" (click)="removeVideo(i)">Rimuovi</button>
-        </div>
-      </li>
-    </ul>
-    <div class="input-group mt-2">
-      <input class="form-control" [(ngModel)]="newVideo.videoUrl" placeholder="URL nuovo video">
-      <input class="form-control" [(ngModel)]="newVideo.altText" placeholder="Testo alternativo">
-      <button class="btn btn-success" (click)="addVideo()">Aggiungi Video</button>
-    </div>
+<!-- Sezione FAQ -->
+<div class="mt-4">
+  <h3>FAQ</h3>
+  <div *ngFor="let faq of product?.faqs; let i = index" class="mb-2">
+    <label>Domanda</label>
+    <textarea [(ngModel)]="faq.question" class="form-control" placeholder="Inserisci domanda"></textarea>
+    <label>Risposta</label>
+    <textarea [(ngModel)]="faq.answer" class="form-control" placeholder="Inserisci risposta"></textarea>
+    <button class="btn btn-danger mt-2" (click)="removeFAQ(faq.id)">Rimuovi FAQ</button>
   </div>
 
-  <!-- Sezione Categoria -->
-  <div class="mb-4">
-    <label for="category">Categoria:</label>
-    <select id="category" class="form-select" [(ngModel)]="product.categoryId">
-      <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
-    </select>
+  <div class="input-group mt-3">
+    <textarea class="form-control" [(ngModel)]="newFAQ.question" placeholder="Nuova domanda"></textarea>
+    <textarea class="form-control mt-2" [(ngModel)]="newFAQ.answer" placeholder="Nuova risposta"></textarea>
+    <button class="btn btn-success mt-2" (click)="addFAQ()">Aggiungi FAQ</button>
   </div>
+</div>
 
-  <!-- Sezione Area -->
-  <div class="mb-4">
-    <label for="area">Area:</label>
-    <select id="area" class="form-select" [(ngModel)]="product.areaid">
-      <option *ngFor="let area of areas" [value]="area.id">{{ area.name }}</option>
-    </select>
-  </div>
 
-  <!-- Sezione Shelving -->
-  <div class="mb-4">
-    <label for="shelving">Shelving:</label>
-    <select id="shelving" class="form-select" [(ngModel)]="product.shelvingId">
-      <option *ngFor="let shelving of shelvings" [value]="shelving.id">{{ shelving.name }}</option>
-    </select>
-  </div>
-
-  <!-- Sezione Shelf -->
-  <div class="mb-4">
-    <label for="shelf">Shelf:</label>
-    <select id="shelf" class="form-select" [(ngModel)]="product.shelfId">
-      <option *ngFor="let shelf of shelves" [value]="shelf.id">{{ shelf.name }}</option>
-    </select>
-  </div>
-
-  <!-- Sezione FAQ -->
-  <div class="mb-4">
-    <h3>FAQ</h3>
-    <ul class="list-group">
-      <li *ngFor="let faq of product?.faqs; let i = index" class="list-group-item">
-        <div class="input-group mb-2">
-          <input class="form-control" [(ngModel)]="faq.question" placeholder="Modifica domanda">
-          <input class="form-control" [(ngModel)]="faq.answer" placeholder="Modifica risposta">
-          <button class="btn btn-danger" (click)="removeFAQ(i)">Rimuovi</button>
-        </div>
-      </li>
-    </ul>
-    <div class="input-group mt-2">
-      <input class="form-control" [(ngModel)]="newFAQ.question" placeholder="Nuova domanda">
-      <input class="form-control" [(ngModel)]="newFAQ.answer" placeholder="Nuova risposta">
-      <button class="btn btn-success" (click)="addFAQ()">Aggiungi FAQ</button>
-    </div>
-  </div>
 
   <!-- Sezione Recensioni -->
-  <div class="mb-4">
+  <div class="mt-4">
     <h3>Recensioni</h3>
-    <ul class="list-group">
-      <li *ngFor="let review of product?.reviews; let i = index" class="list-group-item">
-        <div class="input-group mb-2">
-          <input class="form-control" [(ngModel)]="review.rating" placeholder="Modifica valutazione">
-          <input class="form-control" [(ngModel)]="review.comment" placeholder="Modifica commento">
-          <button class="btn btn-danger" (click)="removeReview(i)">Rimuovi</button>
-        </div>
-      </li>
-    </ul>
-    <div class="input-group mt-2">
-      <input class="form-control" [(ngModel)]="newReview.rating" placeholder="Valutazione">
-      <input class="form-control" [(ngModel)]="newReview.comment" placeholder="Nuovo commento">
-      <button class="btn btn-success" (click)="addReview()">Aggiungi Recensione</button>
+    <div *ngFor="let review of product.reviews" class="mb-3">
+      <div class="form-group">
+        <label>Utente: {{ review.user?.nome }}</label>
+      </div>
+      <div class="form-group">
+        <label>Valutazione:</label>
+        <input class="form-control" [(ngModel)]="review.rating" type="number" min="0" max="5" />
+      </div>
+      <div class="form-group">
+        <label>Commento:</label>
+        <textarea class="form-control" [(ngModel)]="review.comment"></textarea>
+      </div>
+
+      <div *ngIf="review.reviewImages.length > 0">
+        <p>Immagini:</p>
+        <img *ngFor="let image of review.reviewImages" [src]="image.coverImageUrl" alt="Immagine recensione" class="img-fluid mb-2" />
+      </div>
+
+      <div *ngIf="review.reviewVideos.length > 0">
+        <p>Video:</p>
+        <video *ngFor="let video of review.reviewVideos" controls class="w-100 mb-2">
+          <source [src]="video.videoUrl" type="video/mp4" />
+        </video>
+      </div>
+
+      <button class="btn btn-primary" (click)="updateReview(review)">Salva Recensione</button>
+      <button class="btn btn-danger" (click)="removeReview(review.id)">Rimuovi Recensione</button>
     </div>
   </div>
-
-  <!-- Pulsante per salvare tutte le modifiche -->
-  <button class="btn btn-primary" (click)="saveChanges()">Salva tutte le modifiche</button>
 </div>

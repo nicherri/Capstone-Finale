@@ -19,6 +19,11 @@ export class ShelfService {
     return this.http.get<Shelf>(`${this.baseUrl}/${id}`);
   }
 
+  getShelvesByShelving(shelvingId: number): Observable<Shelf[]> {
+    return this.http.get<Shelf[]>(`${this.baseUrl}/${shelvingId}`);
+  }
+
+
   createShelf(shelf: Shelf): Observable<Shelf> {
     return this.http.post<Shelf>(this.baseUrl, shelf);
   }

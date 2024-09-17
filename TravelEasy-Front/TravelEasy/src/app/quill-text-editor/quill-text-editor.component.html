@@ -1,0 +1,7 @@
+<quill-editor
+  [(ngModel)]="content"
+  [modules]="quillConfig"
+  (blur)="onBlur()"
+  (onContentChanged)="onContentChanged($event)"
+  placeholder="Scrivi qui il tuo testo...">
+</quill-editor>
