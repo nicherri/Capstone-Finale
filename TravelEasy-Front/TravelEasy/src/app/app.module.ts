@@ -1,27 +1,22 @@
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms'; // Assicurati che FormsModule e ReactiveFormsModule siano importati
+import { NgModule } from '@angular/core';
+import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { HttpClientModule } from '@angular/common/http';
-import { QuillModule } from 'ngx-quill';
-import { QuillTextEditorComponent } from './quill-text-editor/quill-text-editor.component';
+import { QuillEditorComponent } from 'ngx-quill';
 
 @NgModule({
   declarations: [
     AppComponent,
-    QuillTextEditorComponent
+    QuillEditorComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    FormsModule, // Per supportare ngModel
-    ReactiveFormsModule, // Per i form reattivi
-    HttpClientModule,
-    QuillModule.forRoot() // Configura QuillModule
   ],
-  providers: [],
-  bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA] // Aggiungi lo schema qui
+  providers: [
+    provideClientHydration()
+  ],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }
