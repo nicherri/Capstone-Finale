@@ -8,9 +8,6 @@
         <th>Immagine</th>
         <th>Nome Prodotto</th>
         <th>Categoria</th>
-        <th>Area</th>
-        <th>Scaffalatura</th>
-        <th>Scaffale</th>
         <th>Prezzo</th>
 
         <th>Azioni</th>
@@ -19,14 +16,17 @@
     <tbody>
       <tr *ngFor="let product of products">
         <td>
-          <img *ngIf="product.images && product.images.length > 0" [src]="getFullImageUrl(product.images[0].coverImageUrl)" alt="{{ product.title }}" class="img-thumbnail" width="100" height="100" />
-          <span *ngIf="!product.images || product.images.length === 0">Nessuna immagine</span>
+          <img *ngIf="product.images && product.images.length > 0 && product.images[0].imageUrl"
+          [src]="getFullImageUrl(product.images[0].imageUrl)"
+          alt="{{ product.title }}"
+          class="img-thumbnail"
+          width="100"
+          height="100"
+          loading="lazy" />
+     <span *ngIf="!product.images || product.images.length === 0">Nessuna immagine</span>
         </td>
         <td>{{ product.title }}</td>
         <td>{{ product.categoryName }}</td>
-        <td>{{ product.areaName }}</td>
-        <td>{{ product.shelvingName }}</td>
-        <td>{{ product.shelfName }}</td>
         <td>{{ product.price | currency }}</td>
 
         <td>

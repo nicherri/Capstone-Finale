@@ -9,6 +9,8 @@ namespace TravelEasy.Interface
         Task<VideoDTO> CreateVideoAsync(VideoDTO videoDto);
         Task<VideoDTO> UpdateVideoAsync(int id, VideoDTO videoDto);
         Task<bool> DeleteVideoAsync(int id);
+        Task UpdateVideosAsync(int entityId, string entityTitle, List<IFormFile> newVideoFiles, List<string> existingVideoUrls, string entityType);
+        Task SaveVideosAsync(int entityId, string entityTitle, List<IFormFile> videoFiles, string entityType);
 
         // Altre operazioni specifiche per i video
         Task<IEnumerable<VideoDTO>> GetVideosByProductIdAsync(int productId);

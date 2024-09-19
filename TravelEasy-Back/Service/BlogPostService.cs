@@ -1,14 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TravelEasy.Data;
+using TravelEasy.Interface;
 using TravelEasy.Models.DTO;
 
 public class BlogPostService : IBlogPostService
 {
     private readonly TravelEasyContext _context;
+    private readonly IImageService _imageService;
+    private readonly IVideoService _videoService;
 
-    public BlogPostService(TravelEasyContext context)
+
+    public BlogPostService(TravelEasyContext context, IImageService imageService, IVideoService videoService)
     {
         _context = context;
+        _imageService = imageService;
+        _videoService = videoService;
     }
 
     public async Task<IEnumerable<BlogPostDTO>> GetAllBlogPostsAsync()
@@ -43,7 +49,7 @@ public class BlogPostService : IBlogPostService
         };
     }
 
-    public async Task<BlogPostDTO> CreateBlogPostAsync(BlogPostDTO blogPostDto)
+    public async Task<BlogPostDTO> CreateBlogPostAsync(BlogPostDTO blogPostDto, List<IFormFile> imageFiles, List<IFormFile> videoFiles)
     {
         var blogPost = new BlogPost
         {
@@ -53,26 +59,46 @@ public class BlogPostService : IBlogPostService
             CreatedAt = DateTime.UtcNow
         };
 
-        // Aggiungi il nuovo post al contesto
         _context.BlogPosts.Add(blogPost);
         await _context.SaveChangesAsync();
 
-        blogPostDto.Id = blogPost.Id; // Setta l'ID del post creato
+        if (imageFiles != null && imageFiles.Any())
+        {
+            await _imageService.SaveImagesAsync(blogPost.Id, blogPost.Title, imageFiles, "blog");
+        }
+
+        if (videoFiles != null && videoFiles.Any())
+        {
+            await _videoService.SaveVideosAsync(blogPost.Id, blogPost.Title, videoFiles, "blog");
+        }
+
+        blogPostDto.Id = blogPost.Id;
         return blogPostDto;
     }
 
-    public async Task<BlogPostDTO> UpdateBlogPostAsync(int id, BlogPostDTO blogPostDto)
+
+
+
+    public async Task<BlogPostDTO> UpdateBlogPostAsync(int id, BlogPostDTO blogPostDto, List<IFormFile> newImageFiles, List<string> existingImageUrls)
     {
+        // Trova il blog post nel database
         var blogPost = await _context.BlogPosts.FindAsync(id);
         if (blogPost == null) return null;
 
+        // Aggiorna i campi del blog post
         blogPost.Title = blogPostDto.Title;
         blogPost.Content = blogPostDto.Content;
         blogPost.AuthorId = blogPostDto.AuthorId;
 
+        // Salva le modifiche del blog post
         await _context.SaveChangesAsync();
+
+        // Aggiorna le immagini del blog post
+        await _imageService.UpdateImagesAsync(blogPost.Id, blogPost.Title, newImageFiles, existingImageUrls, "blog");
+
         return blogPostDto;
     }
+
 
     public async Task<bool> DeleteBlogPostAsync(int id)
     {

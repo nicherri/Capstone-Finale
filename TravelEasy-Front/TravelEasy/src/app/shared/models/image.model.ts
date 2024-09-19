@@ -5,12 +5,9 @@ import { Product } from "./product.model";
 
 export interface Image {
   id: number;
-  coverImageUrl: string;
-  image1Url?: string;
-  image2Url?: string;
-  image3Url?: string;
+  imageUrl?: string;
   altText?: string;
-
+  isCover: boolean;
   productId?: number;
   product?: Product;
   categoryid?:number;

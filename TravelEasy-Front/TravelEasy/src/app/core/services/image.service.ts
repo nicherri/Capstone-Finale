@@ -7,12 +7,16 @@ import { Image } from '../../shared/models/image.model';
   providedIn: 'root',
 })
 export class ImageService {
-  private baseUrl = 'http://localhost:5000/api/image';
+  private baseUrl = 'https://localhost:44337/api/image';
 
   constructor(private http: HttpClient) {}
 
   getAllImages(): Observable<Image[]> {
     return this.http.get<Image[]>(this.baseUrl);
+  }
+
+  setImageAsCover(imageId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/set-cover/${imageId}`, {});
   }
 
   getImageById(id: number): Observable<Image> {
@@ -24,11 +28,12 @@ export class ImageService {
   }
 
   updateImage(productId: number, formData: FormData): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/product/${productId}/images`, formData);
+    return this.http.put<any>(`${this.baseUrl}${productId}/images`, formData);
   }
 
 
-  deleteImage(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  deleteImage(imageId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${imageId}`);
   }
+
 }

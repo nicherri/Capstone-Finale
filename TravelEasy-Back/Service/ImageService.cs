@@ -20,11 +20,12 @@ public class ImageService : IImageService
             .Select(image => new ImageDTO
             {
                 Id = image.Id,
-                CoverImageUrl = image.CoverImageUrl,
+                ImageUrl = image.ImageUrl,
                 AltText = image.AltText,
                 ProductId = image.ProductId,
                 BlogPostId = image.BlogPostId,
-                ReviewId = image.ReviewId
+                ReviewId = image.ReviewId,
+                CategoryId = image.CategoryId
             }).ToListAsync();
     }
 
@@ -36,11 +37,12 @@ public class ImageService : IImageService
         return new ImageDTO
         {
             Id = image.Id,
-            CoverImageUrl = image.CoverImageUrl,
+            ImageUrl = image.ImageUrl,
             AltText = image.AltText,
             ProductId = image.ProductId,
             BlogPostId = image.BlogPostId,
-            ReviewId = image.ReviewId
+            ReviewId = image.ReviewId,
+            CategoryId = image.CategoryId
         };
     }
 
@@ -48,11 +50,12 @@ public class ImageService : IImageService
     {
         var image = new Image
         {
-            CoverImageUrl = imageDto.CoverImageUrl,
+            ImageUrl = imageDto.ImageUrl,
             AltText = imageDto.AltText,
             ProductId = imageDto.ProductId,
             BlogPostId = imageDto.BlogPostId,
-            ReviewId = imageDto.ReviewId
+            ReviewId = imageDto.ReviewId,
+            CategoryId = imageDto.CategoryId
         };
 
         _context.Images.Add(image);
@@ -80,10 +83,8 @@ public class ImageService : IImageService
         _logger.LogInformation($"Updating image {id} with new data");
 
         // Aggiorna i campi dell'immagine esistente con i nuovi valori
-        existingImage.CoverImageUrl = imageDto.CoverImageUrl;
-        existingImage.Image1Url = imageDto.Image1Url;
-        existingImage.Image2Url = imageDto.Image2Url;
-        existingImage.Image3Url = imageDto.Image3Url;
+
+        existingImage.ImageUrl = imageDto.ImageUrl;
         existingImage.AltText = imageDto.AltText;
         existingImage.ProductId = imageDto.ProductId;
         existingImage.BlogPostId = imageDto.BlogPostId;
@@ -135,7 +136,7 @@ public class ImageService : IImageService
             .Select(image => new ImageDTO
             {
                 Id = image.Id,
-                CoverImageUrl = image.CoverImageUrl,
+                ImageUrl = image.ImageUrl,
                 AltText = image.AltText,
                 ProductId = image.ProductId
             }).ToListAsync();
@@ -148,7 +149,7 @@ public class ImageService : IImageService
             .Select(image => new ImageDTO
             {
                 Id = image.Id,
-                CoverImageUrl = image.CoverImageUrl,
+                ImageUrl = image.ImageUrl,
                 AltText = image.AltText,
                 BlogPostId = image.BlogPostId
             }).ToListAsync();
@@ -161,9 +162,218 @@ public class ImageService : IImageService
             .Select(image => new ImageDTO
             {
                 Id = image.Id,
-                CoverImageUrl = image.CoverImageUrl,
+                ImageUrl = image.ImageUrl,
                 AltText = image.AltText,
                 ReviewId = image.ReviewId
             }).ToListAsync();
     }
+
+    public async Task SaveImagesAsync(int entityId, string entityTitle, List<IFormFile> imageFiles, string entityType)
+    {
+        if (imageFiles == null || !imageFiles.Any())
+        {
+            Console.WriteLine("Nessun file immagine trovato da salvare.");
+            return;
+        }
+
+        // Determina la cartella base in base al tipo di entità
+        string baseFolder = entityType.ToLower() switch
+        {
+            "product" => "wwwroot/images/products",
+            "category" => "wwwroot/images/categories",
+            "review" => "wwwroot/images/reviews",
+            "blog" => "wwwroot/images/blogs",
+            _ => throw new ArgumentException("Tipo di entità non valido.")
+        };
+
+        Console.WriteLine($"Base folder per {entityType}: {baseFolder}");
+
+        // Crea la directory specifica per l'entità
+        var entityFolder = Path.Combine(baseFolder, entityTitle.Replace(" ", "_").ToLower());
+
+        try
+        {
+            if (!Directory.Exists(entityFolder))
+            {
+                Directory.CreateDirectory(entityFolder);
+                Console.WriteLine($"Cartella creata: {entityFolder}");
+            }
+            else
+            {
+                Console.WriteLine($"Cartella già esistente: {entityFolder}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Errore nella creazione della directory: {ex.Message}");
+            throw;
+        }
+
+        // Ottieni l'ultimo valore dell'ordine dalle immagini esistenti
+        var existingImages = await _context.Images
+            .Where(i => i.ProductId == entityId || i.CategoryId == entityId || i.ReviewId == entityId || i.BlogPostId == entityId)
+            .ToListAsync();
+
+        int currentOrder = existingImages.Any() ? existingImages.Max(i => i.Order) + 1 : 1;  // Inizializza l'ordine
+
+        var imageSaveTasks = new List<Task>();
+
+        foreach (var file in imageFiles)
+        {
+            if (file.Length > 0)
+            {
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var imagePath = Path.Combine(entityFolder, fileName);
+
+                var imageEntity = new Image
+                {
+                    AltText = "Default AltText",
+                    ImageUrl = $"/images/{entityType}s/{entityTitle.Replace(" ", "_").ToLower()}/{fileName}",
+                    Order = currentOrder++  // Imposta l'ordine in modo incrementale
+                };
+
+                Console.WriteLine($"Salvataggio del file: {imagePath}");
+
+                switch (entityType.ToLower())
+                {
+                    case "product":
+                        imageEntity.ProductId = entityId;
+                        break;
+                    case "category":
+                        imageEntity.CategoryId = entityId;
+                        break;
+                    case "review":
+                        imageEntity.ReviewId = entityId;
+                        break;
+                    case "blog":
+                        imageEntity.BlogPostId = entityId;
+                        break;
+                }
+
+                // Salva l'immagine
+                var saveTask = Task.Run(async () =>
+                {
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                        Console.WriteLine($"File immagine salvato: {imagePath}");
+                    }
+                });
+                imageSaveTasks.Add(saveTask);
+
+                _context.Images.Add(imageEntity);  // Aggiungi l'immagine al contesto
+            }
+        }
+
+        await Task.WhenAll(imageSaveTasks);  // Attendi che tutte le immagini siano state salvate
+        await _context.SaveChangesAsync();   // Salva le modifiche nel database
+
+        Console.WriteLine("Tutte le immagini sono state salvate correttamente.");
+    }
+
+
+
+    public async Task UpdateImagesAsync(int entityId, string entityTitle, List<IFormFile> newImageFiles, List<string> existingImageUrls, string entityType)
+    {
+        // Ottieni tutte le immagini esistenti per l'entità specifica (prodotto, recensione, blog, ecc.)
+        var existingImages = await _context.Images
+            .Where(i =>
+                (entityType == "product" && i.ProductId == entityId) ||
+                (entityType == "category" && i.CategoryId == entityId) ||
+                (entityType == "review" && i.ReviewId == entityId) ||
+                (entityType == "blog" && i.BlogPostId == entityId))
+            .ToListAsync();
+
+        // Se nessuna immagine viene modificata, non fare nulla
+        if (newImageFiles == null && existingImageUrls != null && existingImageUrls.SequenceEqual(existingImages.Select(i => i.ImageUrl)))
+        {
+            return;  // Non ci sono modifiche, quindi non serve aggiornare nulla
+        }
+
+        // Rimuovi immagini che non sono più presenti nella lista di URL esistenti
+        var imagesToRemove = existingImages
+            .Where(i => !existingImageUrls.Contains(i.ImageUrl))  // Rimuovi solo se l'URL non è nella lista
+            .ToList();
+
+        foreach (var image in imagesToRemove)
+        {
+            await RemoveImageById(image.Id);  // Chiama il metodo che rimuove l'immagine e gestisce la copertina
+        }
+
+        // Salva nuove immagini caricate dall'utente
+        if (newImageFiles != null && newImageFiles.Any())
+        {
+            await SaveImagesAsync(entityId, entityTitle, newImageFiles, entityType);  // Salva le nuove immagini
+        }
+
+        // Assicurati che ci sia sempre una copertina se non esiste
+        var remainingImages = await _context.Images
+            .Where(i =>
+                (entityType == "product" && i.ProductId == entityId) ||
+                (entityType == "category" && i.CategoryId == entityId) ||
+                (entityType == "review" && i.ReviewId == entityId) ||
+                (entityType == "blog" && i.BlogPostId == entityId))
+            .ToListAsync();
+
+        if (!remainingImages.Any(i => i.IsCover))  // Se non c'è nessuna immagine copertina
+        {
+            var firstAvailableImage = remainingImages.FirstOrDefault();
+            if (firstAvailableImage != null)
+            {
+                firstAvailableImage.IsCover = true;
+                _context.Images.Update(firstAvailableImage);  // Imposta la prima immagine disponibile come copertina
+            }
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+
+
+    public async Task<bool> RemoveImageById(int imageId)
+    {
+        var image = await _context.Images.FindAsync(imageId);
+        if (image == null) return false;
+
+        // Controlla se è l'immagine di copertina
+        if (image.IsCover)
+        {
+            // Trova un'altra immagine da impostare come copertina
+            var otherImages = await _context.Images
+                .Where(i => i.ProductId == image.ProductId && i.Id != imageId)
+                .OrderBy(i => i.Order)
+                .ToListAsync();
+
+            if (otherImages.Any())
+            {
+                otherImages.First().IsCover = true;  // Imposta la prima immagine disponibile come copertina
+            }
+        }
+
+        _context.Images.Remove(image);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> SetImageAsCoverAsync(int imageId)
+    {
+        var image = await _context.Images.FindAsync(imageId);
+        if (image == null) return false;
+
+        // Imposta tutte le altre immagini dello stesso prodotto come non cover
+        var relatedImages = await _context.Images
+            .Where(i => i.ProductId == image.ProductId)
+            .ToListAsync();
+
+        foreach (var img in relatedImages)
+        {
+            img.IsCover = img.Id == imageId;  // Solo l'immagine con l'ID specifico sarà cover
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+
+
 }

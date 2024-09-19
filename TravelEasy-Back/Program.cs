@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
 using System.Text.Json.Serialization;
 using TravelEasy.Data;
 using TravelEasy.Interface;
@@ -22,6 +24,19 @@ builder.Services.AddCors(options =>
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>(); // Aggiungi Brotli
+    options.Providers.Add<GzipCompressionProvider>();   // Aggiungi Gzip
+});
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Optimal;
+});
+
+
 // Configura il servizio per il DbContext
 builder.Services.AddDbContext<TravelEasyContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -43,6 +58,8 @@ builder.Services.AddScoped<IShelfService, ShelfService>();
 builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IWishlistItemService, WishlistItemService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddMemoryCache();
+
 
 builder.Services.AddControllersWithViews().AddJsonOptions(options =>
 {
@@ -66,9 +83,6 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Middleware per servire i file statici dalla cartella wwwroot
-app.UseStaticFiles();
-
-// Aggiungi qui il middleware per servire file statici da una cartella personalizzata
 app.UseStaticFiles();
 
 app.UseRouting();

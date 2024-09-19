@@ -192,18 +192,15 @@ namespace TravelEasy.Migrations
                     b.Property<int?>("CategoryId")
                         .HasColumnType("int");
 
-                    b.Property<string>("CoverImageUrl")
+                    b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Image1Url")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsCover")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("Image2Url")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Image3Url")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
 
                     b.Property<int?>("ProductId")
                         .HasColumnType("int");

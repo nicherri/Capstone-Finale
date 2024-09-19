@@ -7,7 +7,7 @@ import { WishlistItem } from '../../shared/models/wishlist-item.model';
   providedIn: 'root',
 })
 export class WishlistItemService {
-  private baseUrl = 'http://localhost:5000/api/wishlistitem';
+  private baseUrl = 'https://localhost:44337/api/wishlistitem';
 
   constructor(private http: HttpClient) {}
 

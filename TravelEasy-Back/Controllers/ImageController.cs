@@ -51,6 +51,19 @@ namespace TravelEasy.Controllers
             return result;
         }
 
+        [HttpPost("set-cover/{imageId}")]
+        public async Task<IActionResult> SetImageAsCover(int imageId)
+        {
+            var result = await _imageService.SetImageAsCoverAsync(imageId);
+            if (!result)
+            {
+                return NotFound();
+            }
+
+            return Ok();
+        }
+
+
 
 
 

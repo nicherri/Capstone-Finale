@@ -33,21 +33,29 @@ namespace TravelEasy.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ReviewDTO>> CreateReview(ReviewDTO reviewDto)
+        public async Task<IActionResult> CreateReview([FromForm] ReviewDTO reviewDto, [FromForm] List<IFormFile> imageFiles, [FromForm] List<IFormFile> videoFiles)
         {
-            var createdReview = await _reviewService.CreateReviewAsync(reviewDto);
-            return CreatedAtAction(nameof(GetReviewById), new { id = createdReview.Id }, createdReview);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var createdReview = await _reviewService.CreateReviewAsync(reviewDto, imageFiles, videoFiles);
+
+            return Ok(createdReview);
         }
 
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReview(int id, ReviewDTO reviewDto)
+        public async Task<IActionResult> UpdateReview(int id, [FromForm] ReviewDTO reviewDto, [FromForm] List<IFormFile> newImageFiles, [FromForm] List<IFormFile> newVideoFiles, [FromForm] List<string> existingImageUrls, [FromForm] List<string> existingVideoUrls)
         {
             if (id != reviewDto.Id)
             {
                 return BadRequest();
             }
 
-            var updatedReview = await _reviewService.UpdateReviewAsync(id, reviewDto);
+            var updatedReview = await _reviewService.UpdateReviewAsync(id, reviewDto, newImageFiles, newVideoFiles, existingImageUrls, existingVideoUrls);
+
             if (updatedReview == null)
             {
                 return NotFound();
@@ -55,6 +63,7 @@ namespace TravelEasy.Controllers
 
             return NoContent();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReview(int id)

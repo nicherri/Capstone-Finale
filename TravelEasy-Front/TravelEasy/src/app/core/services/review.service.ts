@@ -7,7 +7,7 @@ import { Review } from '../../shared/models/review.model';
   providedIn: 'root',
 })
 export class ReviewService {
-  private baseUrl = 'http://localhost:5000/api/review';
+  private baseUrl = 'https://localhost:44337/api/review';
 
   constructor(private http: HttpClient) {}
 

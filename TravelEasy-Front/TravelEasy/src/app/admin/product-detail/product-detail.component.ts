@@ -16,6 +16,8 @@ import { Video } from '../../shared/models/video.model';
 import { User } from '../../shared/models/user.model';
 import { Category } from '../../shared/models/category.model';
 import { CategoryService } from '../../core/services/category.service';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Delta } from 'quill/core';
 
 @Component({
   selector: 'app-product-detail',
@@ -23,11 +25,13 @@ import { CategoryService } from '../../core/services/category.service';
   styleUrls: ['./product-detail.component.scss']
 })
 export class ProductDetailComponent implements OnInit {
+  productForm?: FormGroup;
   product: Product | undefined;
   productId: number;
 
   // Modelli per nuovi elementi
   newFAQ: FAQ = { id: 0, question: '', answer: '', productId: 0 };
+  newBenefitDescription: string = '';
   Benefit: Benefit = { id: 0, description: '', productId: 0 };
   newReview: Review = { id: 0, productId: 0, userId: 0, rating: 0, comment: '', createdAt: new Date(), reviewImages: [], reviewVideos: [] };
   categories: Category[] = [];
@@ -51,6 +55,18 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit(): void {
     this.loadProduct();
     this.loadCategories();
+
+    this.productForm = new FormGroup({
+      description: new FormControl(this.product?.description),  // Popola i campi form con il prodotto esistente
+      benefits: new FormControl(this.product?.benefits),
+      faq: new FormControl(this.product?.faqs)
+    });
+
+  }
+
+  onSubmit() {
+    console.log("cosa da cercare",this.productForm?.value);  // Qui vedrai i valori inseriti dall'utente
+    // Puoi aggiungere la logica per salvare le modifiche
   }
 
   // Carica il prodotto
@@ -108,7 +124,7 @@ export class ProductDetailComponent implements OnInit {
     review.reviewImages.forEach((image) => {
       this.imageService.getImageById(image.id).subscribe(
         (loadedImage) => {
-          image.coverImageUrl = loadedImage.coverImageUrl;
+          image.imageUrl = loadedImage.imageUrl;
         }
       );
     });
@@ -123,14 +139,29 @@ export class ProductDetailComponent implements OnInit {
 
   // Funzioni per gestire benefici
   addBenefit(): void {
-    if (this.product) {
-      this.Benefit.productId = this.product.id;
-      this.benefitService.createBenefit(this.Benefit).subscribe(() => {
-        alert('Beneficio aggiunto con successo');
-        this.loadProduct(); // Ricarica il prodotto
-      });
+    if (!this.newBenefitDescription || !this.product || !this.product.id) {
+      console.error('Descrizione o prodotto non definito');
+      return;
     }
+
+    const newBenefit: Benefit = {
+      id: 0,  // Usa 0 come id temporaneo, sarà sovrascritto dal backend
+      description: this.newBenefitDescription,
+      productId: this.product.id // Associa al prodotto corrente
+    };
+
+    this.benefitService.addBenefit(newBenefit).subscribe((addedBenefit) => {
+      if (this.product && this.product.benefits) {
+        this.product.benefits.push(addedBenefit);  // Aggiungi il nuovo beneficio alla lista
+      }
+      this.newBenefitDescription = '';  // Resetta la descrizione
+    }, error => {
+      console.error('Errore durante l\'aggiunta del beneficio:', error);
+    });
   }
+
+
+
 
   loadBenefits(): void {
     if (this.product && this.product.id) {
@@ -252,11 +283,12 @@ export class ProductDetailComponent implements OnInit {
       const reader = new FileReader();
       reader.onload = (e: any) => {
         if (this.product) {
-          // Crea un nuovo oggetto Image
+          // Crea un nuovo oggetto Image con la proprietà isCover
           const newImage: Image = {
             id: 0,  // Imposta un id provvisorio
-            coverImageUrl: e.target.result,  // Usa l'URL base64 come immagine
-            productId: this.product.id
+            imageUrl: e.target.result,  // Usa l'URL base64 come immagine
+            productId: this.product.id,
+            isCover: false  // Imposta isCover su false per tutte le nuove immagini caricate
           };
           this.product.images.push(newImage);  // Aggiungi l'immagine al prodotto
         }
@@ -266,31 +298,38 @@ export class ProductDetailComponent implements OnInit {
   }
 
 
-  saveImages(): void {
-    if (this.product && this.selectedImages.length > 0) {
-      const formData = new FormData();
+  setAsCover(image: Image): void {
+    if (this.product) {
+      // Imposta l'immagine selezionata come cover e deseleziona tutte le altre
+      this.product.images.forEach(img => img.isCover = false);
+      image.isCover = true;
 
-      // Aggiungi ogni immagine selezionata al formData
-      this.selectedImages.forEach((imageFile: File, index) => {
-        formData.append(`images`, imageFile, imageFile.name);
-      });
-
-      // Invia il formData al server
-      this.imageService.updateImage(this.product.id, formData).subscribe(() => {
-        alert('Immagini aggiornate con successo');
-      }, error => {
-        console.error('Errore durante l\'aggiornamento delle immagini:', error);
+      // Chiama il servizio per aggiornare l'immagine nel backend
+      this.imageService.setImageAsCover(image.id).subscribe(() => {
+        alert('Immagine di copertina impostata con successo');
+      }, (error: any) => {  // Aggiungi il tipo 'any' esplicitamente
+        console.error('Errore durante l\'impostazione dell\'immagine di copertina:', error);
       });
     }
   }
+
+
 
 
 
   removeImage(image: Image): void {
     if (this.product) {
-      this.product.images = this.product.images.filter(img => img !== image);
+      this.imageService.deleteImage(image.id).subscribe(() => {
+        this.product!.images = this.product!.images.filter(img => img.id !== image.id);
+        alert('Immagine rimossa con successo');
+      }, error => {
+        console.error('Errore durante la rimozione dell\'immagine:', error);
+      });
     }
   }
+
+
+
 
   onVideoUpload(event: any): void {
     const files: File[] = Array.from(event.target.files);
@@ -311,30 +350,54 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
-
-
-  saveVideos(): void {
-    if (this.product && this.selectedVideos.length > 0) {
-      const formData = new FormData();
-
-      // Aggiungi ogni video selezionato al formData
-      this.selectedVideos.forEach((videoFile: File, index) => {
-        formData.append(`videos`, videoFile, videoFile.name);
-      });
-
-      // Invia il formData al server
-      this.videoService.updateVideo(this.product.id, formData).subscribe(() => {
-        alert('Video aggiornati con successo');
+  removeVideo(video: Video): void {
+    if (this.product) {
+      this.videoService.deleteVideo(video.id).subscribe(() => {
+        // Rimuovi il video dalla lista localmente senza attendere il ricaricamento della pagina
+        this.product!.videos = this.product!.videos.filter(v => v.id !== video.id);
+        alert('Video rimosso con successo');
       }, error => {
-        console.error('Errore durante l\'aggiornamento dei video:', error);
+        console.error('Errore durante la rimozione del video:', error);
       });
     }
   }
 
 
 
-  // Funzione per aggiornare il prodotto
-  updateProduct(): void {
+  onMediaUpload(event: any): void {
+    const files: File[] = Array.from(event.target.files);
+
+    files.forEach((file: File) => {
+      const reader = new FileReader();
+      const fileType = file.type.split('/')[0];  // 'image' o 'video'
+
+      reader.onload = (e: any) => {
+        if (this.product) {
+          if (fileType === 'image') {
+            const newImage: Image = {
+              id: 0,
+              imageUrl: e.target.result,  // Usa l'URL base64 come immagine
+              productId: this.product.id,
+              isCover: false
+            };
+            this.product.images.push(newImage);  // Aggiungi l'immagine al prodotto
+          } else if (fileType === 'video') {
+            const newVideo: Video = {
+              id: 0,
+              videoUrl: e.target.result,  // Usa l'URL base64 come video URL
+              productId: this.product.id
+            };
+            this.product.videos.push(newVideo);  // Aggiungi il video al prodotto
+          }
+        }
+      };
+      reader.readAsDataURL(file);  // Leggi il file come URL di dati
+    });
+  }
+
+
+
+  saveProductAndMedia(): void {
     if (this.product) {
       const updatedProduct: any = {
         id: this.product.id,
@@ -344,37 +407,40 @@ export class ProductDetailComponent implements OnInit {
         price: this.product.price ? this.product.price : 0,
         numberOfPieces: this.product.numberOfPieces !== undefined ? this.product.numberOfPieces : 0,
         categoryId: this.product.categoryId,
-        categoryName: this.product.categoryName || '',  // Nome della categoria
-      areaId: this.product.areaId,  // Assicurati che areaId non sia undefined
-      areaName: this.product.areaName || ' ',  // Nome dell'area
-      shelvingId: this.product.shelvingId,  // Assicurati che shelvingId non sia undefined
-      shelvingName: this.product.shelvingName || '',  // Nome della scaffalatura
-      shelfId: this.product.shelfId,  // Assicurati che shelfId non sia undefined
-      shelfName: this.product.shelfName || '',
+        categoryName: this.product.categoryName || '',
+        areaId: this.product.areaId || 0,
+        areaName: this.product.areaName || '',
+        shelvingId: this.product.shelvingId || 0,
+        shelvingName: this.product.shelvingName || '',
+        shelfId: this.product.shelfId || 0,
+        shelfName: this.product.shelfName || '',
         faqs: this.product.faqs || [],
         benefits: this.product.benefits || [],
         reviews: this.product.reviews || [],
-        images: this.product.images || [],
-        videos: this.product.videos || []
+        relatedProducts: this.product.relatedProducts || []
       };
 
-      console.log("Updated Product Payload:", updatedProduct);  // Controlla i valori inviati
+      const formData = new FormData();
 
-      this.productService.updateProduct(
-        this.product.id,
-        updatedProduct,
-        this.selectedImages, // Immagini selezionate
-        this.selectedVideos  // Video selezionati
-      ).subscribe(
-        () => {
-          alert('Prodotto aggiornato con successo');
-        },
-        (error) => {
-          console.error('Errore durante l\'aggiornamento del prodotto:', error);
-        }
-      );
+      formData.append('product', new Blob([JSON.stringify(updatedProduct)], { type: 'application/json' }));
+
+      // Aggiungi immagini selezionate al formData
+      this.selectedImages.forEach(image => formData.append('images', image));
+
+      // Aggiungi video selezionati al formData
+      this.selectedVideos.forEach(video => formData.append('videos', video));
+
+      // Chiama il servizio per salvare il prodotto e i media
+      this.productService.updateProductWithMedia(this.product.id, updatedProduct, this.selectedImages, this.selectedVideos)
+        .subscribe(() => {
+          alert('Prodotto, immagini e video aggiornati con successo');
+        }, error => {
+          console.error('Errore durante l\'aggiornamento del prodotto e media:', error);
+        });
     }
   }
+
+
 
 
 

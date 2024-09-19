@@ -31,23 +31,30 @@ namespace TravelEasy.Controllers
             }
             return Ok(category);
         }
-
         [HttpPost]
-        public async Task<ActionResult<CategoryDTO>> CreateCategory(CategoryDTO categoryDto)
+        public async Task<IActionResult> CreateCategory([FromForm] CategoryDTO categoryDto, [FromForm] List<IFormFile> imageFiles)
         {
-            var createdCategory = await _categoryService.CreateCategoryAsync(categoryDto);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = createdCategory.Id }, createdCategory);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var createdCategory = await _categoryService.CreateCategoryAsync(categoryDto, imageFiles);
+
+            return Ok(createdCategory);
         }
 
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, CategoryDTO categoryDto)
+        public async Task<IActionResult> UpdateCategory(int id, [FromForm] CategoryDTO categoryDto, [FromForm] List<IFormFile> newImageFiles, [FromForm] List<string> existingImageUrls)
         {
             if (id != categoryDto.Id)
             {
                 return BadRequest();
             }
 
-            var updatedCategory = await _categoryService.UpdateCategoryAsync(id, categoryDto);
+            var updatedCategory = await _categoryService.UpdateCategoryAsync(id, categoryDto, newImageFiles, existingImageUrls);
+
             if (updatedCategory == null)
             {
                 return NotFound();
@@ -55,6 +62,7 @@ namespace TravelEasy.Controllers
 
             return NoContent();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(int id)

@@ -20,9 +20,14 @@ export function app(): express.Express {
   // Example Express Rest API endpoints
   // server.get('/api/**', (req, res) => { });
   // Serve static files from /browser
-  server.get('*.*', express.static(browserDistFolder, {
-    maxAge: '1y'
-  }));
+  server.get('*', (req, res) => {
+    res.render('index', {
+      req,
+      res,
+      time: 90000 // Aumenta il timeout a 60 secondi (60000 ms)
+    });
+  });
+
 
   // All regular routes use the Angular engine
   server.get('*', (req, res, next) => {

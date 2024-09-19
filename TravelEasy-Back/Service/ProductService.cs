@@ -1,49 +1,41 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TravelEasy.Data;
+using TravelEasy.Interface;
 using TravelEasy.Models.DTO;
 
 public class ProductService : IProductService
 {
     private readonly TravelEasyContext _context;
+    private readonly IImageService _imageService;  // Dipendenza ImageService
+    private readonly IVideoService _videoService;
 
-    public ProductService(TravelEasyContext context)
+    public ProductService(TravelEasyContext context, IImageService imageService, IVideoService videoService)
     {
         _context = context;
+        _imageService = imageService;
+        _videoService = videoService;
     }
 
     public async Task<IEnumerable<ProductDTO>> GetAllProductsAsync(int pageNumber = 1, int pageSize = 20)
     {
         return await _context.Products
+            .AsNoTracking()
             .Include(p => p.Category)
-            .Include(p => p.Area)
-            .Include(p => p.Shelving)
-            .Include(p => p.Shelf)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(product => new ProductDTO
             {
                 Id = product.Id,
                 Title = product.Title,
-                Subtitle = product.Subtitle,
                 Description = product.Description,
                 Price = product.Price,
-                NumberOfPieces = product.NumberOfPieces,
                 CategoryId = product.CategoryId,
-                CategoryName = product.Category != null ? product.Category.Name : null,  // Controllo esplicito null
-                AreaId = product.AreaId,
-                AreaName = product.Area != null ? product.Area.Name : null,              // Controllo esplicito null
-                ShelvingId = product.ShelvingId,
-                ShelvingName = product.Shelving != null ? product.Shelving.Name : null,  // Controllo esplicito null
-                ShelfId = product.ShelfId,
-                ShelfName = product.Shelf != null ? product.Shelf.Name : null,           // Controllo esplicito null
+                CategoryName = product.Category != null ? product.Category.Name : null,
                 AverageRating = product.AverageRating,
                 Images = product.Images.Select(i => new ImageDTO
                 {
                     Id = i.Id,
-                    CoverImageUrl = i.CoverImageUrl,
-                    Image1Url = i.Image1Url,
-                    Image2Url = i.Image2Url,
-                    Image3Url = i.Image3Url
+                    ImageUrl = i.ImageUrl,
                 }).ToList()
             }).ToListAsync();
     }
@@ -87,10 +79,7 @@ public class ProductService : IProductService
             Images = product.Images != null ? product.Images.Select(i => new ImageDTO
             {
                 Id = i.Id,
-                CoverImageUrl = i.CoverImageUrl,
-                Image1Url = i.Image1Url,
-                Image2Url = i.Image2Url,
-                Image3Url = i.Image3Url,
+                ImageUrl = i.ImageUrl,
                 AltText = i.AltText
             }).ToList() : new List<ImageDTO>(),
 
@@ -120,7 +109,6 @@ public class ProductService : IProductService
     {
         try
         {
-            // Crea il prodotto nel database
             var product = new Product
             {
                 Title = productDto.Title,
@@ -138,147 +126,25 @@ public class ProductService : IProductService
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            // Gestione delle immagini (limite massimo di 4 immagini per record)
-            // Gestione delle immagini in parallelo
-            if (imageFiles != null && imageFiles.Any())
-            {
-                // Crea una directory per il prodotto basata sul suo nome
-                var productFolder = Path.Combine("wwwroot/images/products", product.Title.Replace(" ", "_"));
+            await _imageService.SaveImagesAsync(product.Id, product.Title, imageFiles, "product");
 
-                if (!Directory.Exists(productFolder))
-                {
-                    Directory.CreateDirectory(productFolder);
-                }
-
-                var imageChunks = imageFiles
-                    .Select((file, index) => new { File = file, Index = index })
-                    .GroupBy(x => x.Index / 4)
-                    .ToList();
-
-                var imageSaveTasks = new List<Task>(); // Collezione di task per la gestione asincrona
-
-                foreach (var chunk in imageChunks)
-                {
-                    var imageEntity = new Image
-                    {
-                        ProductId = product.Id,
-                        CoverImageUrl = null,
-                        Image1Url = null,
-                        Image2Url = null,
-                        Image3Url = null,
-                        AltText = "Default AltText"
-                    };
-
-                    int i = 0;
-                    foreach (var fileInfo in chunk)
-                    {
-                        var file = fileInfo.File;
-                        if (file.Length > 0)
-                        {
-                            // Crea task per salvare il file
-                            var imagePath = Path.Combine(productFolder, file.FileName);
-                            var saveTask = Task.Run(async () =>
-                            {
-                                using (var stream = new FileStream(imagePath, FileMode.Create))
-                                {
-                                    await file.CopyToAsync(stream);
-                                }
-                            });
-
-                            // Aggiungi il task all'elenco
-                            imageSaveTasks.Add(saveTask);
-
-                            // Assegna le immagini ai campi corretti
-                            switch (i)
-                            {
-                                case 0:
-                                    imageEntity.CoverImageUrl = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                                    break;
-                                case 1:
-                                    imageEntity.Image1Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                                    break;
-                                case 2:
-                                    imageEntity.Image2Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                                    break;
-                                case 3:
-                                    imageEntity.Image3Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                                    break;
-                            }
-                            i++;
-                        }
-                    }
-                    // Aggiungi il record di immagine al database
-                    _context.Images.Add(imageEntity);
-                }
-
-                // Aspetta che tutte le immagini vengano salvate
-                await Task.WhenAll(imageSaveTasks);
-            }
-
-            // Gestione dei video in parallelo
-            if (videoFiles != null && videoFiles.Any())
-            {
-                var productVideoFolder = Path.Combine("wwwroot/videos/products", product.Title.Replace(" ", "_"));
-
-                if (!Directory.Exists(productVideoFolder))
-                {
-                    Directory.CreateDirectory(productVideoFolder);
-                }
-
-                var videoSaveTasks = new List<Task>(); // Collezione di task per i video
-
-                foreach (var file in videoFiles)
-                {
-                    if (file.Length > 0)
-                    {
-                        // Crea task per salvare il video
-                        var videoPath = Path.Combine(productVideoFolder, file.FileName);
-                        var saveTask = Task.Run(async () =>
-                        {
-                            using (var stream = new FileStream(videoPath, FileMode.Create))
-                            {
-                                await file.CopyToAsync(stream);
-                            }
-                        });
-
-                        // Aggiungi il task all'elenco
-                        videoSaveTasks.Add(saveTask);
-
-                        // Crea il record di video
-                        var videoEntity = new Video
-                        {
-                            ProductId = product.Id,
-                            VideoUrl = $"/videos/products/{product.Title.Replace(" ", "_")}/{file.FileName}",
-                            AltText = "Default AltText"
-                        };
-
-                        _context.Videos.Add(videoEntity);
-                    }
-                }
-
-                // Aspetta che tutti i video vengano salvati
-                await Task.WhenAll(videoSaveTasks);
-            }
+            await _videoService.SaveVideosAsync(product.Id, product.Title, videoFiles, "product");
 
 
-            // Salva le immagini, i video e il prodotto nel database
             await _context.SaveChangesAsync();
 
-            // Restituisce il prodotto creato con l'ID
             productDto.Id = product.Id;
             return productDto;
         }
         catch (Exception ex)
         {
-            // Gestione dell'errore
             throw;
         }
     }
 
 
 
-
-    public async Task<ProductDTO> UpdateProductAsync(int id, ProductDTO productDto, List<IFormFile> imageFiles, List<IFormFile> videoFiles)
+    public async Task<ProductDTO> UpdateProductAsync(int id, string title, string subtitle, string description, decimal price, int numberOfPieces, int categoryId, string categoryName, int areaId, string areaName, int shelvingId, string shelvingName, int shelfId, string shelfName, IFormFileCollection images, IFormFileCollection videos)
     {
         var product = await _context.Products
             .Include(p => p.Images)
@@ -288,117 +154,25 @@ public class ProductService : IProductService
         if (product == null) return null;
 
         // Aggiorna le proprietà del prodotto
-        product.Title = productDto.Title;
-        product.Subtitle = productDto.Subtitle;
-        product.Description = productDto.Description;
-        product.Price = productDto.Price;
-        product.NumberOfPieces = productDto.NumberOfPieces;
-        product.CategoryId = productDto.CategoryId;
-        product.AreaId = productDto.AreaId;
-        product.ShelvingId = productDto.ShelvingId;
-        product.ShelfId = productDto.ShelfId;
-        product.AverageRating = productDto.AverageRating;
+        product.Title = title;
+        product.Subtitle = subtitle;
+        product.Description = description;
+        product.Price = price;
+        product.NumberOfPieces = numberOfPieces;
+        product.CategoryId = categoryId;
+        product.AreaId = areaId;
+        product.ShelvingId = shelvingId;
+        product.ShelfId = shelfId;
 
-        // Gestione delle immagini
-        if (imageFiles != null && imageFiles.Any())
+        // Aggiungi qui la logica per salvare le immagini e i video usando il servizio immagine e video
+        if (images != null && images.Any())
         {
-            // Ottieni tutti i record esistenti per il prodotto
-            var imageRecords = product.Images.ToList();
-
-            // Ottieni l'ultimo record di immagini o creane uno nuovo se necessario
-            var lastImageRecord = imageRecords.LastOrDefault();
-
-            // Se non ci sono record esistenti o l'ultimo record è già pieno, crea un nuovo record
-            if (lastImageRecord == null || (lastImageRecord.CoverImageUrl != null && lastImageRecord.Image1Url != null && lastImageRecord.Image2Url != null && lastImageRecord.Image3Url != null))
-            {
-                lastImageRecord = new Image
-                {
-                    ProductId = product.Id,
-                    AltText = "Default AltText"
-                };
-                _context.Images.Add(lastImageRecord);
-                imageRecords.Add(lastImageRecord); // Aggiungilo alla lista dei record
-            }
-
-            // Crea una cartella per il prodotto, se non esiste
-            var productFolder = Path.Combine("wwwroot/images/products", product.Title.Replace(" ", "_"));
-            if (!Directory.Exists(productFolder))
-            {
-                Directory.CreateDirectory(productFolder);
-            }
-
-            // Aggiunge ogni immagine ai record di immagini esistenti o ne crea di nuovi se necessario
-            foreach (var file in imageFiles)
-            {
-                if (file.Length > 0)
-                {
-                    // Salva l'immagine fisicamente
-                    var imagePath = Path.Combine(productFolder, file.FileName);
-                    using (var stream = new FileStream(imagePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
-
-                    // Inserisci l'immagine nei campi disponibili del record corrente
-                    if (lastImageRecord.CoverImageUrl == null)
-                    {
-                        lastImageRecord.CoverImageUrl = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                    }
-                    else if (lastImageRecord.Image1Url == null)
-                    {
-                        lastImageRecord.Image1Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                    }
-                    else if (lastImageRecord.Image2Url == null)
-                    {
-                        lastImageRecord.Image2Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                    }
-                    else if (lastImageRecord.Image3Url == null)
-                    {
-                        lastImageRecord.Image3Url = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}";
-                    }
-                    else
-                    {
-                        // Se il record è pieno, crea un nuovo record di immagini e continua
-                        lastImageRecord = new Image
-                        {
-                            ProductId = product.Id,
-                            CoverImageUrl = $"/images/products/{product.Title.Replace(" ", "_")}/{file.FileName}",
-                            AltText = "Default AltText"
-                        };
-                        _context.Images.Add(lastImageRecord);
-                        imageRecords.Add(lastImageRecord); // Aggiungi alla lista dei record
-                    }
-                }
-            }
+            await _imageService.SaveImagesAsync(product.Id, product.Title, images.ToList(), "product");
         }
 
-        // Aggiornamento dei video
-        if (videoFiles != null && videoFiles.Any())
+        if (videos != null && videos.Any())
         {
-            _context.Videos.RemoveRange(product.Videos);
-
-            var videos = new List<Video>();
-
-            foreach (var file in videoFiles)
-            {
-                if (file.Length > 0)
-                {
-                    var videoPath = Path.Combine("wwwroot/videos/products", file.FileName);
-
-                    using (var stream = new FileStream(videoPath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
-
-                    videos.Add(new Video
-                    {
-                        VideoUrl = $"/videos/products/{file.FileName}",
-                        ProductId = product.Id
-                    });
-                }
-            }
-
-            product.Videos = videos;
+            await _videoService.SaveVideosAsync(product.Id, product.Title, videos.ToList(), "product");
         }
 
         await _context.SaveChangesAsync();
@@ -413,21 +187,17 @@ public class ProductService : IProductService
             Price = product.Price,
             NumberOfPieces = product.NumberOfPieces,
             CategoryId = product.CategoryId,
-            CategoryName = product.Category?.Name,
+            CategoryName = categoryName,
             AreaId = product.AreaId,
-            AreaName = product.Area?.Name,
+            AreaName = areaName,
             ShelvingId = product.ShelvingId,
-            ShelvingName = product.Shelving?.Name,
+            ShelvingName = shelvingName,
             ShelfId = product.ShelfId,
-            ShelfName = product.Shelf?.Name,
-            AverageRating = product.AverageRating,
+            ShelfName = shelfName,
             Images = product.Images.Select(i => new ImageDTO
             {
                 Id = i.Id,
-                CoverImageUrl = i.CoverImageUrl,
-                Image1Url = i.Image1Url,
-                Image2Url = i.Image2Url,
-                Image3Url = i.Image3Url,
+                ImageUrl = i.ImageUrl,
                 AltText = i.AltText
             }).ToList(),
             Videos = product.Videos.Select(v => new VideoDTO
@@ -451,11 +221,7 @@ public class ProductService : IProductService
         // Elimina manualmente le immagini e i video associati
         foreach (var image in product.Images)
         {
-            DeleteFileIfExists(image.CoverImageUrl);
-            DeleteFileIfExists(image.Image1Url);
-            DeleteFileIfExists(image.Image2Url);
-            DeleteFileIfExists(image.Image3Url);
-
+            DeleteFileIfExists(image.ImageUrl);
             _context.Images.Remove(image); // Elimina l'immagine dal database
         }
 
@@ -501,10 +267,7 @@ public class ProductService : IProductService
             // Elimina le immagini collegate alla recensione
             foreach (var image in review.ReviewImages)
             {
-                DeleteFileIfExists(image.CoverImageUrl);
-                DeleteFileIfExists(image.Image1Url);
-                DeleteFileIfExists(image.Image2Url);
-                DeleteFileIfExists(image.Image3Url);
+                DeleteFileIfExists(image.ImageUrl);
 
                 _context.Images.Remove(image); // Elimina l'immagine dal database
             }
@@ -540,7 +303,7 @@ public class ProductService : IProductService
                 Images = product.Images.Select(i => new ImageDTO
                 {
                     Id = i.Id,
-                    CoverImageUrl = i.CoverImageUrl
+                    ImageUrl = i.ImageUrl
                 }).ToList()
             }).ToListAsync();
     }
@@ -565,7 +328,7 @@ public class ProductService : IProductService
             Images = related.Images.Select(i => new ImageDTO
             {
                 Id = i.Id,
-                CoverImageUrl = i.CoverImageUrl
+                ImageUrl = i.ImageUrl
             }).ToList()
         }).ToList();
     }

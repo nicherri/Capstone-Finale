@@ -8,7 +8,7 @@ import { User } from '../../shared/models/user.model';
   providedIn: 'root',
 })
 export class UserService {
-  private baseUrl = 'http://localhost:5000/api/user';
+  private baseUrl = 'https://localhost:44337/api/user';
 
   constructor(private http: HttpClient) {}
 

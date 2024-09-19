@@ -4,12 +4,15 @@ using TravelEasy.Models.DTO;
 
 public class CategoryService : ICategoryService
 {
+    private readonly IImageService _imageService;
     private readonly TravelEasyContext _context;
 
-    public CategoryService(TravelEasyContext context)
+    public CategoryService(TravelEasyContext context, IImageService imageService)
     {
         _context = context;
+        _imageService = imageService;
     }
+
 
     public async Task<IEnumerable<CategoryDTO>> GetAllCategoriesAsync()
     {
@@ -35,7 +38,7 @@ public class CategoryService : ICategoryService
         };
     }
 
-    public async Task<CategoryDTO> CreateCategoryAsync(CategoryDTO categoryDto)
+    public async Task<CategoryDTO> CreateCategoryAsync(CategoryDTO categoryDto, List<IFormFile> imageFiles)
     {
         var category = new Category
         {
@@ -43,33 +46,19 @@ public class CategoryService : ICategoryService
             Description = categoryDto.Description
         };
 
-        // Creare e aggiungere immagini se presenti nel DTO
-        if (categoryDto.Images != null && categoryDto.Images.Count > 0)
-        {
-            foreach (var imageDto in categoryDto.Images)
-            {
-                var image = new Image
-                {
-                    CoverImageUrl = imageDto.CoverImageUrl,
-                    Image1Url = imageDto.Image1Url,
-                    Image2Url = imageDto.Image2Url,
-                    Image3Url = imageDto.Image3Url,
-                    AltText = imageDto.AltText,
-                    Category = category // Associazione alla categoria
-                };
-                category.Images.Add(image);
-            }
-        }
-
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
+
+        // Salva le immagini della categoria
+        await _imageService.SaveImagesAsync(category.Id, category.Name, imageFiles, "category");
 
         categoryDto.Id = category.Id;
         return categoryDto;
     }
 
 
-    public async Task<CategoryDTO> UpdateCategoryAsync(int id, CategoryDTO categoryDto)
+
+    public async Task<CategoryDTO> UpdateCategoryAsync(int id, CategoryDTO categoryDto, List<IFormFile> newImageFiles, List<string> existingImageUrls)
     {
         var category = await _context.Categories
                                      .Include(c => c.Images) // Includiamo le immagini esistenti
@@ -80,15 +69,7 @@ public class CategoryService : ICategoryService
         category.Description = categoryDto.Description;
 
         // Aggiorna le immagini
-        category.Images.Clear();
-        category.Images.AddRange(categoryDto.Images.Select(i => new Image
-        {
-            CoverImageUrl = i.CoverImageUrl,
-            Image1Url = i.Image1Url,
-            Image2Url = i.Image2Url,
-            Image3Url = i.Image3Url,
-            AltText = i.AltText
-        }));
+        await _imageService.UpdateImagesAsync(category.Id, category.Name, newImageFiles, existingImageUrls, "category");
 
         await _context.SaveChangesAsync();
         return categoryDto;

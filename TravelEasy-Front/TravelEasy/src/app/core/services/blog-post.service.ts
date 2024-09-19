@@ -7,7 +7,7 @@ import { BlogPost } from '../../shared/models/blog-post.model';
   providedIn: 'root',
 })
 export class BlogPostService {
-  private baseUrl = 'http://localhost:5000/api//blogposts';
+  private baseUrl = 'https://localhost:44337/api//blogposts';
 
   constructor(private http: HttpClient) {}
 

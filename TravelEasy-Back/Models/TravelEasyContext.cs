@@ -120,6 +120,11 @@ namespace TravelEasy.Data
                 .WithMany(b => b.Images)
                 .HasForeignKey(i => i.BlogPostId)
                 .OnDelete(DeleteBehavior.SetNull);  // SetNull per evitare cancellazioni a cascata
+
+            modelBuilder.Entity<Image>()
+          .HasOne(i => i.Product)
+          .WithMany(p => p.Images)
+          .HasForeignKey(i => i.ProductId);
         }
 
 

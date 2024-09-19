@@ -23,4 +23,9 @@ public class ProductDTO
     public List<FAQDTO> FAQs { get; set; }
     public List<RelatedProductDTO> RelatedProducts { get; set; }
     public List<BenefitDTO>? Benefits { get; set; } = new List<BenefitDTO>();
+
+    public List<string> DescriptionImages { get; set; } = new List<string>();
+    public List<string> DescriptionVideos { get; set; } = new List<string>();
+
+    public List<string> ExistingVideoUrls { get; set; } = new List<string>();
 }

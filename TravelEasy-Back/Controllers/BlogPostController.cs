@@ -33,35 +33,30 @@ namespace TravelEasy.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<BlogPostDTO>> CreateBlogPost([FromForm] BlogPostDTO blogPostDto)
+        [HttpPost]
+        public async Task<IActionResult> CreateBlogPost([FromForm] BlogPostDTO blogPostDto, [FromForm] List<IFormFile> imageFiles, [FromForm] List<IFormFile> videoFiles)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            try
-            {
-                var createdBlogPost = await _blogPostService.CreateBlogPostAsync(blogPostDto);
-                return CreatedAtAction(nameof(GetBlogPostById), new { id = createdBlogPost.Id }, createdBlogPost);
-            }
-            catch (Exception ex)
-            {
-                // Restituisci un messaggio di errore dettagliato
-                return StatusCode(500, new { error = ex.Message, details = ex.InnerException?.Message });
-            }
+            var createdPost = await _blogPostService.CreateBlogPostAsync(blogPostDto, imageFiles, videoFiles); // Passa anche videoFiles
+
+            return Ok(createdPost);
         }
 
 
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBlogPost(int id, BlogPostDTO blogPostDto)
+        public async Task<IActionResult> UpdateBlogPost(int id, [FromForm] BlogPostDTO blogPostDto, [FromForm] List<IFormFile> newImageFiles, [FromForm] List<string> existingImageUrls)
         {
             if (id != blogPostDto.Id)
             {
                 return BadRequest();
             }
 
-            var updatedBlogPost = await _blogPostService.UpdateBlogPostAsync(id, blogPostDto);
+            var updatedBlogPost = await _blogPostService.UpdateBlogPostAsync(id, blogPostDto, newImageFiles, existingImageUrls);
             if (updatedBlogPost == null)
             {
                 return NotFound();
@@ -69,6 +64,7 @@ namespace TravelEasy.Controllers
 
             return NoContent();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBlogPost(int id)

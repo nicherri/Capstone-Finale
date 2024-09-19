@@ -1,102 +1,89 @@
-<div *ngIf="product" class="container mt-4">
-  <h2 class="mb-4">Modifica Prodotto: {{ product.title }}</h2>
+  <div *ngIf="product" class="container mt-4">
+    <h2 class="mb-4">Modifica Prodotto: {{ product.title }}</h2>
 
-  <!-- Sezione Immagini e Video -->
-  <div class="row">
-    <div class="col-md-6">
-      <h3>Immagini e Video</h3>
+    <div class="row">
+      <div class="col-md-12">
+        <h3>Immagini e Video</h3>
 
-      <!-- Immagini -->
-      <div class="form-group mb-3">
-        <label for="image">Carica Immagini:</label>
-        <input id="image" type="file" class="form-control" (change)="onImageUpload($event)" multiple />
-      </div>
-
-      <div class="row">
-        <div *ngFor="let image of product?.images" class="col-md-4">
-          <img [src]="image.coverImageUrl" alt="Immagine prodotto" class="img-fluid mb-2" />
-          <button class="btn btn-danger btn-sm" (click)="removeImage(image)">Rimuovi</button>
+        <!-- Caricamento Immagini e Video -->
+        <div class="form-group mb-3">
+          <label for="media">Carica Immagini e Video:</label>
+          <input id="media" type="file" class="form-control" (change)="onMediaUpload($event)" multiple />
         </div>
-      </div>
 
-      <button class="btn btn-primary mt-2" (click)="saveImages()">Salva Immagini</button>
-
-      <!-- Video -->
-      <div class="form-group mb-3">
-        <label for="video">Carica Video:</label>
-        <input id="video" type="file" class="form-control" (change)="onVideoUpload($event)" multiple />
-      </div>
-
-      <div class="row">
-        <div *ngFor="let video of product?.videos" class="col-md-12">
-          <video controls class="w-100 mb-2">
-            <source [src]="video.videoUrl" type="video/mp4" />
-            Il tuo browser non supporta i video.
-          </video>
+        <!-- Visualizzazione Immagini -->
+        <div class="row">
+          <div *ngFor="let image of product?.images" class="col-md-4">
+            <img [src]="image.imageUrl" alt="Immagine prodotto" class="img-fluid mb-2" />
+            <button class="btn btn-danger btn-sm" (click)="removeImage(image)">Rimuovi Immagine</button>
+          </div>
         </div>
-      </div>
 
-      <button class="btn btn-primary mt-2" (click)="saveVideos()">Salva Video</button>
-    </div>
+        <!-- Visualizzazione Video -->
+        <div class="row">
+          <div *ngFor="let video of product?.videos" class="col-md-12">
+            <video controls class="w-100 mb-2">
+              <source [src]="video.videoUrl" type="video/mp4" />
+              Il tuo browser non supporta i video.
+            </video>
+            <button class="btn btn-danger btn-sm" (click)="removeVideo(video)">Rimuovi Video</button>
+          </div>
+        </div>
 
-    <!-- Colonna per i dettagli del prodotto -->
-    <div class="col-md-6">
-      <h3>Modifica Informazioni Prodotto</h3>
 
-      <!-- Titolo -->
-      <div class="form-group mb-3">
-        <label for="title">Titolo:</label>
-        <input id="title" class="form-control" [(ngModel)]="product.title" placeholder="Titolo" />
-      </div>
 
-      <!-- Prezzo -->
-      <div class="form-group mb-3">
-        <label for="price">Prezzo:</label>
-        <input id="price" class="form-control" [(ngModel)]="product.price" type="number" placeholder="Prezzo" />
-      </div>
 
-      <!-- Descrizione -->
-      <div class="form-group mb-3">
-        <label for="description">Descrizione:</label>
-        <app-quill-text-editor [(ngModel)]="product.description"></app-quill-text-editor>
+      <!-- Colonna per i dettagli del prodotto -->
+        <h3>Modifica Informazioni Prodotto</h3>
 
-      </div>
+        <div class="form-group mb-3">
+          <label for="title">Titolo:</label>
+          <input id="title" class="form-control" [(ngModel)]="product.title" placeholder="Titolo" />
+        </div>
 
-      <!-- Selezione Categoria -->
-      <div class="form-group mb-3">
-        <label for="category">Categoria:</label>
-        <select id="category" class="form-select" [(ngModel)]="product.categoryId">
-          <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
-        </select>
-      </div>
+        <div class="form-group mb-3">
+          <label for="price">Prezzo:</label>
+          <input id="price" class="form-control" [(ngModel)]="product.price" type="number" placeholder="Prezzo" />
+        </div>
 
-      <!-- Pulsante per salvare il prodotto -->
-      <button class="btn btn-primary" (click)="updateProduct()">Salva Modifiche Prodotto</button>
+        <div class="form-group mb-3">
+          <label for="description">Descrizione:</label>
+          <quill-editor [(ngModel)]="product.description" name="description"></quill-editor>
+        </div>
+
+        <!-- Selezione Categoria -->
+        <div class="form-group mb-3">
+          <label for="category">Categoria:</label>
+          <select id="category" class="form-select" [(ngModel)]="product.categoryId">
+            <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+          </select>
+        </div>
     </div>
   </div>
 
+
+<!-- Pulsante per salvare immagini e video -->
+<button class="btn btn-primary mt-4" (click)="saveProductAndMedia()">Salva Prodotto e Media</button>
+
+
   <!-- Sezione Benefici -->
-<div class="mt-4">
-  <h3>Benefici</h3>
-  <ul class="list-group">
-    <li *ngFor="let benefit of product?.benefits; let i = index" class="list-group-item">
-      <div class="input-group mb-2">
-        <textarea [(ngModel)]="benefit.description" class="form-control" placeholder="Descrizione del beneficio"></textarea>
-        <div class="input-group-append">
+  <div class="mt-4">
+    <h3>Benefici</h3>
+    <ul class="list-group">
+      <li *ngFor="let benefit of product?.benefits; let i = index" class="list-group-item">
+        <div class="input-group mb-2">
+          <!-- Quill editor per il testo del beneficio -->
+          <quill-editor [(ngModel)]="benefit.description"></quill-editor>
           <button class="btn btn-success" (click)="updateBenefit(benefit)">Salva</button>
           <button class="btn btn-danger" (click)="removeBenefit(benefit.id)">Rimuovi</button>
         </div>
-      </div>
-    </li>
-  </ul>
+      </li>
+    </ul>
 
-  <div class="input-group mt-2">
-    <app-quill-text-editor [(ngModel)]="Benefit.description" placeholder="Nuovo beneficio"></app-quill-text-editor>
-    <div class="input-group-append">
-      <button class="btn btn-success" (click)="addBenefit()">Aggiungi Beneficio</button>
-    </div>
+    <!-- Aggiungi nuovo beneficio -->
+    <quill-editor [(ngModel)]="newBenefitDescription"></quill-editor>
+    <button class="btn btn-primary mt-2" (click)="addBenefit()">Aggiungi Beneficio</button>
   </div>
-</div>
 
 <!-- Sezione FAQ -->
 <div class="mt-4">
@@ -136,7 +123,7 @@
 
       <div *ngIf="review.reviewImages.length > 0">
         <p>Immagini:</p>
-        <img *ngFor="let image of review.reviewImages" [src]="image.coverImageUrl" alt="Immagine recensione" class="img-fluid mb-2" />
+        <img *ngFor="let image of review.reviewImages" [src]="image.imageUrl" alt="Immagine recensione" class="img-fluid mb-2" />
       </div>
 
       <div *ngIf="review.reviewVideos.length > 0">

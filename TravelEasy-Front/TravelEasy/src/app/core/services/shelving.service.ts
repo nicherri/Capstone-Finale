@@ -7,7 +7,7 @@ import { Shelving } from '../../shared/models/shelving.model';
   providedIn: 'root',
 })
 export class ShelvingService {
-  private baseUrl = 'http://localhost:5000/api/shelving';
+  private baseUrl = 'https://localhost:44337/api/shelving';
 
   constructor(private http: HttpClient) {}
 

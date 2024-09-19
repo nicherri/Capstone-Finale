@@ -14,11 +14,20 @@ namespace TravelEasy.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllProducts()
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
         {
-            var products = await _productService.GetAllProductsAsync();
-            return Ok(products);
+            try
+            {
+                var products = await _productService.GetAllProductsAsync(pageNumber, pageSize);
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Errore: {ex.Message}");
+                return StatusCode(500, "Errore interno del server");
+            }
         }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDTO>> GetProductById(int id)
@@ -53,16 +62,12 @@ namespace TravelEasy.Controllers
 
 
 
-
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDTO productDto, List<IFormFile> imageFiles, List<IFormFile> videoFiles)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] string title, [FromForm] string subtitle, [FromForm] string description, [FromForm] decimal price, [FromForm] int numberOfPieces, [FromForm] int categoryId, [FromForm] string categoryName, [FromForm] int areaId, [FromForm] string areaName, [FromForm] int shelvingId, [FromForm] string shelvingName, [FromForm] int shelfId, [FromForm] string shelfName, [FromForm] IFormFileCollection images, [FromForm] IFormFileCollection videos)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            // Chiama il servizio con tutti i parametri richiesti
+            var updatedProduct = await _productService.UpdateProductAsync(id, title, subtitle, description, price, numberOfPieces, categoryId, categoryName, areaId, areaName, shelvingId, shelvingName, shelfId, shelfName, images, videos);
 
-            var updatedProduct = await _productService.UpdateProductAsync(id, productDto, imageFiles, videoFiles);
             if (updatedProduct == null)
             {
                 return NotFound();
@@ -70,6 +75,8 @@ namespace TravelEasy.Controllers
 
             return Ok(updatedProduct);
         }
+
+
 
 
 

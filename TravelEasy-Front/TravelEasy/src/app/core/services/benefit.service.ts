@@ -7,7 +7,7 @@ import { Benefit } from '../../shared/models/benefit.model';
   providedIn: 'root',
 })
 export class BenefitService {
-  private baseUrl = 'http://localhost:5000/api/benefit';
+  private baseUrl = 'https://localhost:44337/api/benefit';
 
   constructor(private http: HttpClient) {}
 
@@ -19,7 +19,7 @@ export class BenefitService {
     return this.http.get<Benefit>(`${this.baseUrl}/${id}`);
   }
 
-  createBenefit(benefit: Benefit): Observable<Benefit> {
+  addBenefit(benefit: Benefit): Observable<Benefit> {
     return this.http.post<Benefit>(this.baseUrl, benefit);
   }
 

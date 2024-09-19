@@ -7,7 +7,7 @@ import { Shelf } from '../../shared/models/shelf.model';
   providedIn: 'root',
 })
 export class ShelfService {
-  private baseUrl = 'http://localhost:5000/api/shelf';
+  private baseUrl = 'https://localhost:44337/api/shelf';
 
   constructor(private http: HttpClient) {}
 
